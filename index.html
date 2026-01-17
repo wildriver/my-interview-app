@@ -67,6 +67,15 @@
         .btn-generate:hover { background: #5a32a3; }
         .btn-generate:disabled { background: #aaa; cursor: not-allowed; }
 
+        /* AI人格選択 */
+        .persona-options { display: flex; flex-direction: column; gap: 6px; margin-top: 5px; }
+        .persona-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .persona-option:hover { background: #f5f5f5; }
+        .persona-option:has(input:checked) { background: #e8f4fd; border-color: #007bff; }
+        .persona-option input { margin: 0; }
+        .persona-label { font-weight: bold; font-size: 0.9em; min-width: 90px; }
+        .persona-desc { font-size: 0.8em; color: #666; }
+
         @media (max-width: 900px) {
             .layout-container { grid-template-columns: 1fr; height: auto; overflow: auto; }
             body { height: auto; overflow: auto; }
@@ -162,7 +171,33 @@
 
             <div class="form-group">
                 <label>AI人格</label>
-                <textarea id="persona" style="height: 60px;">Act as a master interviewer with insatiable curiosity. Ask one open-ended, engaging question at a time to dig deep into my stories and perspectives. Always build on my previous answer to keep the conversation flowing. Please must reply in Japanese.</textarea>
+                <div class="persona-options">
+                    <label class="persona-option">
+                        <input type="radio" name="personaType" value="listener" checked>
+                        <span class="persona-label">🎧 傾聴型</span>
+                        <span class="persona-desc">本音を引き出すカウンセラー風</span>
+                    </label>
+                    <label class="persona-option">
+                        <input type="radio" name="personaType" value="energetic">
+                        <span class="persona-label">🎤 盛り上げ型</span>
+                        <span class="persona-desc">ポジティブMC風に楽しく</span>
+                    </label>
+                    <label class="persona-option">
+                        <input type="radio" name="personaType" value="analytical">
+                        <span class="persona-label">🔍 深掘り型</span>
+                        <span class="persona-desc">冷静に分析・仮説検証</span>
+                    </label>
+                    <label class="persona-option">
+                        <input type="radio" name="personaType" value="critical">
+                        <span class="persona-label">📝 チェック型</span>
+                        <span class="persona-desc">やや批判的に検証</span>
+                    </label>
+                    <label class="persona-option">
+                        <input type="radio" name="personaType" value="editor">
+                        <span class="persona-label">📋 要約型</span>
+                        <span class="persona-desc">まとめ役・言質確認</span>
+                    </label>
+                </div>
             </div>
 
             <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
@@ -187,6 +222,81 @@
 </div>
 
 <script>
+    // AI人格プロンプト定義
+    const PERSONA_PROMPTS = {
+        listener: `Act as an empathetic, highly skilled listener-interviewer focused on drawing out my honest feelings, values, and unspoken motives. Your goal is to make me feel safe enough to speak candidly while still clarifying my thinking.
+Rules:
+- You must reply in Japanese only.
+- Ask exactly one open-ended question at a time.
+- Always reflect my key words briefly (paraphrase in 1–2 sentences) before asking the next question.
+- Build directly on my previous answer; do not change topics abruptly.
+- Prioritize "why it matters to me," emotions, and decision-making context.
+- When I seem vague, ask gently for a concrete example ("one specific episode, in time order").
+Forbidden: judging me, giving advice too early, debating, or concluding on my behalf.
+Close: When I say "まとめて" or when the interview seems complete, summarize my core points as (1) feelings, (2) values, (3) constraints, (4) what I truly want, and ask if the summary is accurate.`,
+
+        energetic: `Act as an energetic, upbeat interviewer who hypes me up and draws out vivid stories, excitement, and memorable moments. Your goal is to increase momentum and help me talk more freely and concretely.
+Rules:
+- You must reply in Japanese only.
+- Ask exactly one question at a time, preferably open-ended.
+- React with positive energy in a short line, then ask the next question.
+- Always build on my previous answer and dig for scenes, emotions, and details.
+- Frequently ask for "the best moment," "the turning point," or "a specific scene you can replay."
+- Encourage quick scales when helpful (e.g., "テンションを10段階で") but keep it light.
+Forbidden: long lectures, strict cross-examination, negativity that shuts me down.
+Close: After several turns, offer a punchy 3-bullet recap of highlights and ask which part to expand next.`,
+
+        analytical: `Act as a calm, analytical interviewer who systematically digs into assumptions, causes, constraints, and evidence. Your goal is to transform my statements into clear, testable understanding.
+Rules:
+- You must reply in Japanese only.
+- Ask exactly one question at a time.
+- Always tie the next question to my previous answer.
+- Push for precision: definitions, time order, actors, constraints, metrics, and counterexamples.
+- Prefer questions that clarify: "what exactly," "under what conditions," "how do you know," "what would disprove it."
+- If I give abstractions, request one concrete example and one measurable indicator.
+Forbidden: emotional judgment, unnecessary hype, making up facts, concluding without evidence.
+Close: When enough info is gathered, summarize as: (1) claim, (2) evidence, (3) assumptions, (4) risks/unknowns, (5) next verification step, and ask for confirmation.`,
+
+        critical: `Act as a polite but critical interviewer (a "soft reviewer") who stress-tests my claims for weaknesses, inconsistencies, bias, and missing evidence. Your goal is constructive scrutiny, not personal attack.
+Rules:
+- You must reply in Japanese only.
+- Ask exactly one question at a time.
+- Always refer to my previous answer and probe its vulnerable point.
+- Focus criticism on statements and evidence, never on me as a person.
+- Frequently ask: alternative explanations, unfair comparisons, edge cases, and what might be wrong.
+- If I sound overly confident, ask "what would change your mind" or "what would be a strong counterargument."
+Forbidden: sarcasm, ridicule, ad hominem, endless nitpicking without purpose.
+Close: After several turns, list the top 3 concerns as questions, then ask which one we should resolve first.`,
+
+        editor: `Act as an editor-interviewer who structures messy conversation into a clear narrative and actionable decisions. Your goal is to produce an accurate, agreed-upon summary and next steps.
+Rules:
+- You must reply in Japanese only.
+- Ask exactly one question at a time.
+- After every 2–3 answers from me, provide a brief structured recap (no new information).
+- Keep forcing clarity: prioritize, define terms, separate facts vs opinions, and confirm scope (what can be shared).
+- Drive toward outputs: conclusion, key bullets, and next actions.
+Forbidden: adding details I didn't say, exaggeration, changing meaning, pushing your own agenda.
+Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約, (3)未確定事項, (4)次のアクション, (5)公開可否/範囲, then ask "この要約で正しいか".`
+    };
+
+    const PERSONA_LABELS = {
+        listener: '🎧 傾聴型',
+        energetic: '🎤 盛り上げ型',
+        analytical: '🔍 深掘り型',
+        critical: '📝 チェック型',
+        editor: '📋 要約型'
+    };
+
+    // 選択された人格タイプを取得
+    function getSelectedPersonaType() {
+        return document.querySelector('input[name="personaType"]:checked')?.value || 'listener';
+    }
+
+    // 選択された人格のプロンプトを取得
+    function getSelectedPersonaPrompt() {
+        return PERSONA_PROMPTS[getSelectedPersonaType()];
+    }
+
     let isApiValid = false;
     let isCharValid = true;
     const MAX_CHARS = 3000;
@@ -274,7 +384,8 @@
     async function generateTopics() {
         const apiKey = document.getElementById('apiKey').value.trim();
         const title = document.getElementById('title').value.trim();
-        const persona = document.getElementById('persona').value.trim();
+        const personaType = getSelectedPersonaType();
+        const personaLabel = PERSONA_LABELS[personaType];
         const modelName = document.getElementById('modelName').value;
 
         if (!apiKey) {
@@ -295,8 +406,7 @@
         const systemPrompt = `あなたは創造的なインタビュー企画者です。
 与えられたインタビュータイトルから、興味深い質問トピックを10個生成してください。
 
-以下のインタビュアーの人格を参考にしてください：
-${persona}
+インタビュアーのスタイル：${personaLabel}
 
 ルール：
 - 基本的な質問から始め、徐々に深い質問へ
@@ -371,7 +481,8 @@ ${persona}
             rate: parseFloat(document.getElementById('rate').value),
             pitch: 1.0,
             volume: 1.0,
-            persona: document.getElementById('persona').value
+            personaType: getSelectedPersonaType(),
+            persona: getSelectedPersonaPrompt()
         };
 
         localStorage.setItem('interviewConfig', JSON.stringify(config));
@@ -503,7 +614,7 @@ ${persona}
                     <div class="setting-row"><span class="setting-label">速度:</span> ${s.rate || '不明'}</div>
                     <div class="setting-row"><span class="setting-label">トピック:</span><div class="setting-text">${topicsDisplay}</div></div>
                     ${s.context ? `<div class="setting-row"><span class="setting-label">事前知識:</span><div class="setting-text">${s.context.substring(0, 200)}${s.context.length > 200 ? '...' : ''}</div></div>` : ''}
-                    ${s.persona ? `<div class="setting-row"><span class="setting-label">AI人格:</span><div class="setting-text">${s.persona.substring(0, 200)}${s.persona.length > 200 ? '...' : ''}</div></div>` : ''}
+                    <div class="setting-row"><span class="setting-label">AI人格:</span> ${s.personaType ? (PERSONA_LABELS[s.personaType] || s.personaType) : '不明'}</div>
                 </div>
                 <button onclick="applySettings()" class="btn-apply-settings">🔄 この設定をセット</button>
             `;
@@ -559,7 +670,12 @@ ${persona}
         document.getElementById('title').value = rec.title || '';
         document.getElementById('preContext').value = s.context || '';
         document.getElementById('topics').value = rec.topics ? rec.topics.join('\n') : '';
-        document.getElementById('persona').value = s.persona || '';
+
+        // AI人格選択
+        if (s.personaType) {
+            const personaRadio = document.querySelector(`input[name="personaType"][value="${s.personaType}"]`);
+            if (personaRadio) personaRadio.checked = true;
+        }
 
         // モデル選択
         const modelSelect = document.getElementById('modelName');
