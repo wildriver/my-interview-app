@@ -405,7 +405,7 @@ ${situationInstruction}
         const messages = [{ role: "system", content: systemPrompt }, ...recentHistory];
 
         const payload = {
-            model: CONFIG.modelName || "llama-3.3-70b-versatile",
+            model: CONFIG.modelName || "llama-3.1-8b-instant",
             messages: messages,
             temperature: customTemp, 
             max_tokens: customMaxTokens
@@ -488,7 +488,7 @@ ${situationInstruction}
                 summary: summaryText,
                 // 設定情報も保存
                 settings: {
-                    modelName: CONFIG.modelName || "llama-3.3-70b-versatile",
+                    modelName: CONFIG.modelName || "llama-3.1-8b-instant",
                     context: CONFIG.context || "",
                     personaType: CONFIG.personaType || "listener",
                     persona: CONFIG.persona || "",
