@@ -655,7 +655,22 @@ ${situationInstruction}
             addMessage('user', transcript);
             processUserResponse(transcript);
         };
-        recognition.onend = () => { toggleVisualizer(false); };
+        recognition.onend = () => {
+            console.log('[DEBUG] recognition.onend fired, isInterviewerSpeaking:', isInterviewerSpeaking, 'isThinking:', isThinking);
+            toggleVisualizer(false);
+            // 音声認識が予期せず終了した場合、再起動を試みる
+            if (!isInterviewerSpeaking && !isThinking && !document.querySelector('.status-error') && !document.querySelector('.status-finishing') && !document.querySelector('.status-idle')) {
+                console.log('[DEBUG] Attempting to restart recognition...');
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                        console.log('[DEBUG] recognition restarted');
+                    } catch(e) {
+                        console.log('[DEBUG] recognition restart failed:', e.message);
+                    }
+                }, 100);
+            }
+        };
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
             if (event.error === 'not-allowed') {
@@ -670,28 +685,41 @@ ${situationInstruction}
 
     function speak(text, onComplete = null) {
         const cleanText = cleanTextForSpeech(text);
-        isInterviewerSpeaking = true; 
+        isInterviewerSpeaking = true;
         updateStatus('speaking', 'AIが話しています...');
-        
+        console.log('[DEBUG] speak() called, text length:', cleanText.length);
+
         const skipBtn = document.getElementById('skip-btn');
         if (skipBtn) skipBtn.style.display = 'inline-block';
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         configureUtterance(utterance);
-        
+
         utterance.onend = () => {
+            console.log('[DEBUG] utterance.onend fired, synth.pending:', synth.pending);
             if(skipBtn) skipBtn.style.display = 'none';
-            if (!synth.pending) { 
+            if (!synth.pending) {
                 isInterviewerSpeaking = false;
                 isThinking = false;
                 if (onComplete) { onComplete(); return; }
                 if(!document.querySelector('.status-error') && !document.querySelector('.status-finishing')){
-                     updateStatus('listening', '聞いています...'); toggleVisualizer(true);
-                     try { recognition.start(); } catch(e) { console.log("Mic active"); }
+                    updateStatus('listening', '聞いています...'); toggleVisualizer(true);
+                    try {
+                        recognition.start();
+                        console.log('[DEBUG] recognition.start() called');
+                    } catch(e) {
+                        console.log("[DEBUG] recognition.start() error:", e.message);
+                    }
                 }
             }
         };
+
+        utterance.onerror = (e) => {
+            console.error('[DEBUG] utterance.onerror:', e.error);
+        };
+
         synth.speak(utterance);
+        console.log('[DEBUG] synth.speak() called');
     }
 
     function setupVisualizerCanvas() {
@@ -771,12 +799,21 @@ ${situationInstruction}
                 ? systemPrompt.substring(0, 500) + '...(truncated)'
                 : systemPrompt;
 
+            // 送信する会話履歴を整形
+            const historyMessages = messages.filter(m => m.role !== 'system');
+            const historyHtml = historyMessages.map(m => {
+                const roleLabel = m.role === 'user' ? '👤 User' : '🤖 AI';
+                const shortContent = m.content.length > 100 ? m.content.substring(0, 100) + '...' : m.content;
+                return `<div style="margin: 3px 0; padding: 3px 6px; background: ${m.role === 'user' ? '#3a3a5a' : '#2a4a2a'}; border-radius: 3px;"><strong>${roleLabel}:</strong> ${escapeHtml(shortContent)}</div>`;
+            }).join('');
+
             entry.innerHTML = `
                 <div class="debug-timestamp">${timestamp}</div>
                 <div class="debug-status">📡 ${status}</div>
-                <div class="debug-history">📜 履歴: ${historyCount}メッセージ送信</div>
-                <div style="color: #aaa; margin-top: 4px;">System Prompt:</div>
+                <div style="color: #aaa; margin-top: 8px;">System Prompt (トピック状況含む):</div>
                 <div class="debug-prompt">${escapeHtml(shortPrompt)}</div>
+                <div style="color: #aaa; margin-top: 8px;">📜 送信する会話履歴 (${historyCount}メッセージ):</div>
+                <div class="debug-prompt" style="color: #ff9; max-height: 120px;">${historyHtml || '<em>なし</em>'}</div>
                 <div class="debug-response-area"></div>
             `;
 
