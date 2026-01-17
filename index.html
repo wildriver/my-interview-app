@@ -69,8 +69,15 @@
         <div class="col-header">🛠 インタビュー設定 (Groq)</div>
         <div class="col-content">
             <div class="form-group">
-                <label>Groq API Key <span id="api-status" class="status-indicator"></span></label>
+                <label>
+                    Groq API Key
+                    <a href="https://console.groq.com/keys" target="_blank" style="font-size: 0.85em; margin-left: 8px;">[APIキーを取得]</a>
+                    <span id="api-status" class="status-indicator"></span>
+                </label>
                 <input type="text" id="apiKey" placeholder="gsk_..." onblur="validateApi()">
+                <label style="font-size: 0.85em; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="saveApiKey"> このブラウザに保存する
+                </label>
             </div>
 
             <div class="form-group">
@@ -260,6 +267,13 @@
         const apiKey = document.getElementById('apiKey').value.trim();
         if (!apiKey) return alert("APIキーを入力してください");
 
+        // APIキーの保存/削除
+        if (document.getElementById('saveApiKey').checked) {
+            localStorage.setItem('groqApiKey', apiKey);
+        } else {
+            localStorage.removeItem('groqApiKey');
+        }
+
         const config = {
             apiKey: apiKey,
             modelName: document.getElementById('modelName').value,
@@ -304,6 +318,16 @@
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = populateVoiceList;
     }
+
+    // 保存されたAPIキーを読み込む
+    (function loadSavedApiKey() {
+        const savedKey = localStorage.getItem('groqApiKey');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+            document.getElementById('saveApiKey').checked = true;
+            validateApi();
+        }
+    })();
 
     function previewVoice() {
         const voiceName = document.getElementById('voiceName').value;
