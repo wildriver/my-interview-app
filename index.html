@@ -61,6 +61,8 @@
         .setting-text { background: #fff; padding: 5px 8px; border-radius: 4px; font-size: 0.85em; color: #666; margin-top: 3px; width: 100%; white-space: pre-wrap; word-break: break-word; }
         .btn-apply-settings { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 5px; }
         .btn-apply-settings:hover { background: #0056b3; }
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-top: 8px; }
+        .btn-delete:hover { background: #c82333; }
 
         @media (max-width: 900px) {
             .layout-container { grid-template-columns: 1fr; height: auto; overflow: auto; }
@@ -406,6 +408,8 @@
         let settingsHtml = '';
         if (rec.settings) {
             const s = rec.settings;
+            const topicsText = rec.topics && rec.topics.length > 0 ? rec.topics.join(' / ') : '不明';
+            const topicsDisplay = topicsText.length > 150 ? topicsText.substring(0, 150) + '...' : topicsText;
             settingsHtml = `
                 <div class="detail-section-title">使用設定</div>
                 <div class="settings-info">
@@ -413,6 +417,7 @@
                     <div class="setting-row"><span class="setting-label">深さ:</span> ${s.depth === 'deep' ? '長く (5回)' : '標準 (3回)'}</div>
                     <div class="setting-row"><span class="setting-label">音声:</span> ${s.voiceName || '不明'}</div>
                     <div class="setting-row"><span class="setting-label">速度:</span> ${s.rate || '不明'}</div>
+                    <div class="setting-row"><span class="setting-label">トピック:</span><div class="setting-text">${topicsDisplay}</div></div>
                     ${s.context ? `<div class="setting-row"><span class="setting-label">事前知識:</span><div class="setting-text">${s.context.substring(0, 200)}${s.context.length > 200 ? '...' : ''}</div></div>` : ''}
                     ${s.persona ? `<div class="setting-row"><span class="setting-label">AI人格:</span><div class="setting-text">${s.persona.substring(0, 200)}${s.persona.length > 200 ? '...' : ''}</div></div>` : ''}
                 </div>
@@ -424,6 +429,7 @@
             <div class="detail-header">
                 <div class="detail-title">${rec.title}</div>
                 <div class="detail-meta">日時: ${rec.date}</div>
+                <button onclick="deleteRecord(${rec.id})" class="btn-delete">🗑 この履歴を削除</button>
             </div>
             ${settingsHtml}
             <div class="detail-section-title">サマリー</div>
@@ -432,6 +438,29 @@
             <div class="detail-section-title">会話ログ (${rec.history.length}ターン)</div>
             <div class="detail-chat">${chatHtml}</div>
         `;
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm('この履歴を削除しますか？\n削除すると元に戻せません。')) {
+            return;
+        }
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            store.delete(id);
+            tx.oncomplete = () => {
+                // 詳細表示をクリア
+                document.getElementById('history-detail').innerHTML = '<div class="detail-placeholder">履歴を選択すると<br>ここに詳細が表示されます</div>';
+                selectedRecord = null;
+                // 履歴リストを更新
+                loadHistory();
+                alert('削除しました');
+            };
+        } catch (e) {
+            console.error("Delete Error:", e);
+            alert('削除に失敗しました');
+        }
     }
 
     function applySettings() {
