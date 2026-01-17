@@ -499,7 +499,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>AIのモデル</label>
+                    <label>AIのモデル (大きなモデルほど無料API枠が少)</label>
                     <select id="modelName">
                         <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
                         <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
@@ -552,7 +552,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>音声</label>
+                    <label>音声 (ブラウザ依存)</label>
                     <select id="voiceName">
                         <option value="">読み込み中...</option>
                     </select>
@@ -575,7 +575,7 @@
 
                 <div class="form-group">
                     <label>タイトル</label>
-                    <input type="text" id="title" value="福岡未踏に関するインタビュー">
+                    <input type="text" id="title" placeholder="アプリ開発に関するインタビュー">
                 </div>
 
                 <div class="form-group">
@@ -595,13 +595,12 @@
                             タイトルから生成</button>
                         <span id="generate-status" style="font-size: 0.8em; color: #666;"></span>
                     </label>
-                    <textarea id="topics" style="height: 180px;">
-1. 自己紹介
-2. 福岡未踏ではどんなアプリを開発していますか
-3. 福岡未踏に応募しようと思ったきっかけ
-4. 福岡未踏を経験してどうでしたか？
+                    <textarea id="topics" style="height: 180px;" placeholder="1. 自己紹介
+2. どんなアプリを開発していますか
+3. 育成プログラムに応募しようと思ったきっかけ
+4. 育成プログラムを経験してどうでしたか？
 5. アプリの今後は？
-6. 来年度応募するクリエータへのメッセージ</textarea>
+6. 来年度応募するクリエータへのメッセージ"></textarea>
                 </div>
 
                 <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
