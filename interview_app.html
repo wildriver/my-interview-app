@@ -342,6 +342,7 @@
     }
 
     async function processUserResponse(userText) {
+        console.log('[DEBUG] processUserResponse called with:', userText.substring(0, 50));
         isThinking = true;
         updateStatus('thinking', 'AIが考えています (Groq)...');
 
@@ -499,35 +500,59 @@ ${situationInstruction}
 
         // デバッグ: リクエスト送信前に記録
         addDebugEntry(`${callType} - Sending Request`, systemPrompt, messages);
+        console.log('[DEBUG] API Request starting...', { model: payload.model, messageCount: messages.length });
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.apiKey}`
-            },
-            body: JSON.stringify(payload)
-        });
+        // タイムアウト付きfetch（30秒）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+            console.log('[DEBUG] API Request timeout after 30s');
+        }, 30000);
 
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            // Rate Limitエラーの場合は、ユーザーに分かりやすく表示
-            if (response.status === 429) {
-                throw new Error("Rate Limit Exceeded: 1日の利用制限に達しました。時間をおいて試してください。");
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.apiKey}`
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+            console.log('[DEBUG] API Response received, status:', response.status);
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                // Rate Limitエラーの場合は、ユーザーに分かりやすく表示
+                if (response.status === 429) {
+                    throw new Error("Rate Limit Exceeded: 1日の利用制限に達しました。時間をおいて試してください。");
+                }
+                throw new Error(`Groq API Error: ${err.error?.message || response.statusText}`);
             }
-            throw new Error(`Groq API Error: ${err.error?.message || response.statusText}`);
+
+            const data = await response.json();
+            console.log('[DEBUG] API Response parsed successfully');
+            const responseText = data.choices[0].message.content;
+
+            // デバッグ: レスポンス受信後に記録を更新
+            if (promptLog.length > 0) {
+                promptLog[promptLog.length - 1].response = responseText;
+                promptLog[promptLog.length - 1].status = `${callType} - Response Received`;
+            }
+
+            // デバッグ画面も更新
+            updateDebugEntryResponse(responseText);
+
+            return responseText;
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('API呼び出しがタイムアウトしました（30秒）。再度お試しください。');
+            }
+            throw err;
         }
-
-        const data = await response.json();
-        const responseText = data.choices[0].message.content;
-
-        // デバッグ: レスポンス受信後に記録を更新
-        if (promptLog.length > 0) {
-            promptLog[promptLog.length - 1].response = responseText;
-            promptLog[promptLog.length - 1].status = `${callType} - Response Received`;
-        }
-
-        return responseText;
     }
 
     async function generateSummary() {
@@ -621,8 +646,12 @@ ${situationInstruction}
         recognition.onstart = () => { updateStatus('listening', '聞いています...'); toggleVisualizer(true); };
         recognition.onresult = (event) => {
             const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            console.log('[DEBUG] Speech recognized:', transcript, { isInterviewerSpeaking, isThinking });
             if (!transcript) return;
-            if (isInterviewerSpeaking || isThinking) return;
+            if (isInterviewerSpeaking || isThinking) {
+                console.log('[DEBUG] Ignoring speech - AI is speaking or thinking');
+                return;
+            }
             addMessage('user', transcript);
             processUserResponse(transcript);
         };
@@ -714,46 +743,76 @@ ${situationInstruction}
     }
 
     function addDebugEntry(status, systemPrompt, messages, response = null) {
-        const timestamp = new Date().toLocaleTimeString();
-        const historyCount = messages.filter(m => m.role !== 'system').length;
+        try {
+            const timestamp = new Date().toLocaleTimeString();
+            const historyCount = messages.filter(m => m.role !== 'system').length;
 
-        // promptLogに記録（AIの応答インデックスと紐付け）
-        const logEntry = {
-            timestamp: timestamp,
-            status: status,
-            systemPrompt: systemPrompt,
-            messages: JSON.parse(JSON.stringify(messages)), // ディープコピー
-            response: response,
-            aiResponseIndex: conversationHistory.filter(h => h.role === 'assistant').length
-        };
-        promptLog.push(logEntry);
+            // promptLogに記録（AIの応答インデックスと紐付け）
+            const logEntry = {
+                timestamp: timestamp,
+                status: status,
+                systemPrompt: systemPrompt,
+                messages: JSON.parse(JSON.stringify(messages)), // ディープコピー
+                response: response,
+                aiResponseIndex: conversationHistory.filter(h => h.role === 'assistant').length
+            };
+            promptLog.push(logEntry);
 
-        // デバッグモードがONの場合のみ画面に表示
-        if (!debugMode) return;
+            // デバッグモードがONの場合のみ画面に表示
+            if (!debugMode) return;
 
-        const debugBox = document.getElementById('debug-box');
-        const entry = document.createElement('div');
-        entry.className = 'debug-entry';
+            const debugBox = document.getElementById('debug-box');
+            const entry = document.createElement('div');
+            entry.className = 'debug-entry';
+            entry.id = `debug-entry-${promptLog.length - 1}`;
 
-        // プロンプトを短縮表示（最初の500文字）
-        const shortPrompt = systemPrompt.length > 500
-            ? systemPrompt.substring(0, 500) + '...(truncated)'
-            : systemPrompt;
+            // プロンプトを短縮表示（最初の500文字）
+            const shortPrompt = systemPrompt.length > 500
+                ? systemPrompt.substring(0, 500) + '...(truncated)'
+                : systemPrompt;
 
-        entry.innerHTML = `
-            <div class="debug-timestamp">${timestamp}</div>
-            <div class="debug-status">📡 ${status}</div>
-            <div class="debug-history">📜 履歴: ${historyCount}メッセージ送信</div>
-            <div style="color: #aaa; margin-top: 4px;">System Prompt:</div>
-            <div class="debug-prompt">${escapeHtml(shortPrompt)}</div>
-            ${response ? `<div style="color: #aaa; margin-top: 8px;">Response:</div><div class="debug-prompt" style="color: #98fb98;">${escapeHtml(response.substring(0, 300))}${response.length > 300 ? '...' : ''}</div>` : ''}
-        `;
+            entry.innerHTML = `
+                <div class="debug-timestamp">${timestamp}</div>
+                <div class="debug-status">📡 ${status}</div>
+                <div class="debug-history">📜 履歴: ${historyCount}メッセージ送信</div>
+                <div style="color: #aaa; margin-top: 4px;">System Prompt:</div>
+                <div class="debug-prompt">${escapeHtml(shortPrompt)}</div>
+                <div class="debug-response-area"></div>
+            `;
 
-        debugBox.insertBefore(entry, debugBox.firstChild);
+            debugBox.insertBefore(entry, debugBox.firstChild);
 
-        // 最大10件までに制限
-        while (debugBox.children.length > 10) {
-            debugBox.removeChild(debugBox.lastChild);
+            // 最大10件までに制限
+            while (debugBox.children.length > 10) {
+                debugBox.removeChild(debugBox.lastChild);
+            }
+        } catch (e) {
+            console.error('Debug entry error:', e);
+        }
+    }
+
+    function updateDebugEntryResponse(response) {
+        try {
+            if (!debugMode) return;
+
+            const entryId = `debug-entry-${promptLog.length - 1}`;
+            const entry = document.getElementById(entryId);
+            if (entry) {
+                const statusEl = entry.querySelector('.debug-status');
+                if (statusEl) {
+                    statusEl.innerHTML = '✅ Response Received';
+                    statusEl.style.color = '#98fb98';
+                }
+                const responseArea = entry.querySelector('.debug-response-area');
+                if (responseArea && response) {
+                    responseArea.innerHTML = `
+                        <div style="color: #aaa; margin-top: 8px;">Response:</div>
+                        <div class="debug-prompt" style="color: #98fb98;">${escapeHtml(response.substring(0, 300))}${response.length > 300 ? '...' : ''}</div>
+                    `;
+                }
+            }
+        } catch (e) {
+            console.error('Debug update error:', e);
         }
     }
 
