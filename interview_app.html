@@ -469,6 +469,16 @@ ${instruction}
             processUserResponse(transcript); 
         };
         recognition.onend = () => { toggleVisualizer(false); };
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。');
+            } else if (event.error === 'no-speech') {
+                // 無視（音声が検出されなかっただけ）
+            } else {
+                console.error('音声認識エラー:', event.error);
+            }
+        };
     }
 
     function playFiller() {
