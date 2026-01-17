@@ -1,245 +1,632 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Interview Setup (Groq)</title>
     <style>
         /* レイアウト */
-        body { font-family: "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #333; height: 100vh; overflow: hidden; }
-        .layout-container { display: grid; grid-template-columns: 400px 1fr; gap: 20px; padding: 20px; height: 100vh; box-sizing: border-box; }
-        .col { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
-        .col-header { padding: 15px 20px; border-bottom: 1px solid #eee; background: #fafafa; font-weight: bold; color: #2c3e50; flex-shrink: 0; }
-        .col-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: #34495e; }
-        .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 2px; margin-bottom: 5px; }
-        
-        input[type="text"], textarea, select { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        textarea { height: 80px; resize: vertical; }
-        
-        /* 文字数カウント用 */
-        .char-counter { float: right; font-weight: normal; font-size: 0.85em; color: #666; }
-        .char-over { color: #dc3545; font-weight: bold; }
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        .range-wrap { display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
-        input[type="range"] { flex: 1; cursor: pointer; }
-        .range-val { width: 30px; text-align: right; font-weight: bold; }
-        .btn { display: block; width: 100%; padding: 12px; background-color: #f55036; color: white; border: none; border-radius: 50px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 20px; }
-        .btn:hover { background-color: #d43f29; }
-        .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        .btn-preview { display: block; width: 100%; padding: 8px; background-color: #e9ecef; color: #333; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.85em; cursor: pointer; text-align: center; }
-        .btn-preview:hover { background-color: #dde2e6; }
-        .radio-group label { display: inline-block; margin-right: 10px; font-weight: normal; cursor: pointer; font-size: 0.9em; }
-        .status-indicator { font-size: 0.8em; margin-left: 5px; }
-        .status-ok { color: #28a745; }
-        .status-err { color: #dc3545; }
-        .status-loading { color: #e67e22; }
-        
+        .layout-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 20px;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .col {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .col-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+            font-weight: bold;
+            color: #2c3e50;
+            flex-shrink: 0;
+        }
+
+        .col-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #34495e;
+        }
+
+        .help-text {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-top: 2px;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        /* 文字数カウント用 */
+        .char-counter {
+            float: right;
+            font-weight: normal;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .char-over {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .range-val {
+            width: 30px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #f55036;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: #d43f29;
+        }
+
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .btn-preview {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background-color: #e9ecef;
+            color: #333;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-preview:hover {
+            background-color: #dde2e6;
+        }
+
+        .radio-group label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: normal;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+
+        .status-ok {
+            color: #28a745;
+        }
+
+        .status-err {
+            color: #dc3545;
+        }
+
+        .status-loading {
+            color: #e67e22;
+        }
+
         /* 履歴・詳細 */
-        .history-empty { text-align: center; color: #999; padding: 40px 20px; }
-        .history-empty-icon { font-size: 3em; margin-bottom: 10px; }
-        .history-item { padding: 12px 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
-        .history-item:hover { background-color: #f0f8ff; border-color: #007bff; }
-        .history-item.active { background-color: #fff0ee; border-color: #f55036; }
-        .history-date { font-size: 0.75em; color: #888; margin-bottom: 3px; }
-        .history-title { font-weight: bold; font-size: 0.95em; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-empty {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .history-empty-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .history-item {
+            padding: 12px 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: #f0f8ff;
+            border-color: #007bff;
+        }
+
+        .history-item.active {
+            background-color: #fff0ee;
+            border-color: #f55036;
+        }
+
+        .history-date {
+            font-size: 0.75em;
+            color: #888;
+            margin-bottom: 3px;
+        }
+
+        .history-title {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         /* 詳細表示エリア */
-        #history-detail { margin-top: 15px; padding-top: 15px; border-top: 2px solid #eee; }
-        .detail-placeholder { text-align: center; color: #999; margin-top: 50px; }
-        .back-to-list { background: none; border: none; color: #007bff; cursor: pointer; font-size: 0.9em; padding: 5px 0; margin-bottom: 10px; }
-        .back-to-list:hover { text-decoration: underline; }
-        .detail-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
-        .detail-title { font-size: 1.4em; font-weight: bold; color: #f55036; }
-        .detail-meta { font-size: 0.85em; color: #666; margin-top: 5px; }
-        .detail-section-title { font-weight: bold; margin: 20px 0 10px 0; color: #444; border-left: 4px solid #28a745; padding-left: 8px; }
-        .detail-summary { background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; white-space: pre-wrap; font-size: 0.95em; }
-        .detail-chat { font-size: 0.9em; }
-        .chat-row { margin-bottom: 8px; padding: 8px; border-radius: 6px; }
-        .chat-role { font-weight: bold; font-size: 0.8em; margin-bottom: 2px; }
-        .chat-user { background-color: #e3f2fd; }
-        .chat-ai { background-color: #fff0ee; }
+        #history-detail {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+        }
+
+        .detail-placeholder {
+            text-align: center;
+            color: #999;
+            margin-top: 50px;
+        }
+
+        .back-to-list {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 0.9em;
+            padding: 5px 0;
+            margin-bottom: 10px;
+        }
+
+        .back-to-list:hover {
+            text-decoration: underline;
+        }
+
+        .detail-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .detail-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #f55036;
+        }
+
+        .detail-meta {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .detail-section-title {
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            color: #444;
+            border-left: 4px solid #28a745;
+            padding-left: 8px;
+        }
+
+        .detail-summary {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 0.95em;
+        }
+
+        .detail-chat {
+            font-size: 0.9em;
+        }
+
+        .chat-row {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .chat-role {
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 2px;
+        }
+
+        .chat-user {
+            background-color: #e3f2fd;
+        }
+
+        .chat-ai {
+            background-color: #fff0ee;
+        }
 
         /* 設定情報表示 */
-        .settings-info { background: #f0f7ff; padding: 12px; border-radius: 8px; font-size: 0.9em; margin-bottom: 10px; }
-        .setting-row { margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 5px; }
-        .setting-label { font-weight: bold; color: #555; min-width: 70px; }
-        .setting-text { background: #fff; padding: 5px 8px; border-radius: 4px; font-size: 0.85em; color: #666; margin-top: 3px; width: 100%; white-space: pre-wrap; word-break: break-word; }
-        .btn-apply-settings { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 5px; }
-        .btn-apply-settings:hover { background: #0056b3; }
-        .btn-delete { background: #dc3545; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-top: 8px; }
-        .btn-delete:hover { background: #c82333; }
-        .btn-generate { background: #6f42c1; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75em; }
-        .btn-generate:hover { background: #5a32a3; }
-        .btn-generate:disabled { background: #aaa; cursor: not-allowed; }
+        .settings-info {
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .setting-row {
+            margin-bottom: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .setting-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 70px;
+        }
+
+        .setting-text {
+            background: #fff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 3px;
+            width: 100%;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .btn-apply-settings {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .btn-apply-settings:hover {
+            background: #0056b3;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 8px;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .btn-generate {
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+        }
+
+        .btn-generate:hover {
+            background: #5a32a3;
+        }
+
+        .btn-generate:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
 
         /* セクションタイトル */
-        .section-title { font-weight: bold; font-size: 0.95em; color: #333; margin: 15px 0 10px 0; padding: 8px 10px; background: #f0f0f0; border-radius: 6px; border-left: 4px solid #007bff; }
-        .section-title:first-child { margin-top: 0; }
+        .section-title {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #333;
+            margin: 15px 0 10px 0;
+            padding: 8px 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
 
         /* AI人格選択 */
-        .persona-options { display: flex; flex-direction: column; gap: 6px; margin-top: 5px; }
-        .persona-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-        .persona-option:hover { background: #f5f5f5; }
-        .persona-option:has(input:checked) { background: #e8f4fd; border-color: #007bff; }
-        .persona-option input { margin: 0; }
-        .persona-label { font-weight: bold; font-size: 0.9em; min-width: 90px; }
-        .persona-desc { font-size: 0.8em; color: #666; }
+        .persona-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .persona-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .persona-option:hover {
+            background: #f5f5f5;
+        }
+
+        .persona-option:has(input:checked) {
+            background: #e8f4fd;
+            border-color: #007bff;
+        }
+
+        .persona-option input {
+            margin: 0;
+        }
+
+        .persona-label {
+            font-weight: bold;
+            font-size: 0.9em;
+            min-width: 90px;
+        }
+
+        .persona-desc {
+            font-size: 0.8em;
+            color: #666;
+        }
 
         @media (max-width: 900px) {
-            .layout-container { grid-template-columns: 1fr; height: auto; overflow: auto; }
-            body { height: auto; overflow: auto; }
-            .col { height: 500px; }
+            .layout-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: auto;
+            }
+
+            body {
+                height: auto;
+                overflow: auto;
+            }
+
+            .col {
+                height: 500px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="layout-container">
-    
-    <div class="col col-1">
-        <div class="col-header">🛠 インタビュー設定</div>
-        <div class="col-content">
-            <!-- ===== AIの設定 ===== -->
-            <div class="section-title">🤖 AIの設定</div>
+    <div class="layout-container">
 
-            <div class="form-group">
-                <label>
-                    Groq API Key
-                    <a href="https://console.groq.com/keys" target="_blank" style="font-size: 0.85em; margin-left: 8px;">[APIキーを取得]</a>
-                    <span id="api-status" class="status-indicator"></span>
-                </label>
-                <input type="text" id="apiKey" placeholder="gsk_..." onblur="validateApi()">
-                <label style="font-size: 0.85em; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="saveApiKey"> このブラウザに保存する
-                </label>
-            </div>
+        <div class="col col-1">
+            <div class="col-header">🛠 インタビュー設定</div>
+            <div class="col-content">
+                <!-- ===== AIの設定 ===== -->
+                <div class="section-title">🤖 AIの設定</div>
 
-            <div class="form-group">
-                <label>AIのモデル</label>
-                <select id="modelName">
-                    <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
-                    <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
-                    <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B (高速)</option>
-                    <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
-                    <option value="qwen/qwen3-32b">Qwen3 32B</option>
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (高品質)</option>
-                    <option value="openai/gpt-oss-120b">GPT-OSS 120B (高品質)</option>
-                    <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2 Instruct</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>インタビューAIの性格</label>
-                <div class="persona-options">
-                    <label class="persona-option">
-                        <input type="radio" name="personaType" value="listener" checked>
-                        <span class="persona-label">🎧 傾聴型</span>
-                        <span class="persona-desc">本音を引き出すカウンセラー風</span>
+                <div class="form-group">
+                    <label>
+                        Groq API Key
+                        <a href="https://console.groq.com/keys" target="_blank"
+                            style="font-size: 0.85em; margin-left: 8px;">[APIキーを取得]</a>
+                        <span id="api-status" class="status-indicator"></span>
                     </label>
-                    <label class="persona-option">
-                        <input type="radio" name="personaType" value="energetic">
-                        <span class="persona-label">🎤 盛り上げ型</span>
-                        <span class="persona-desc">ポジティブMC風に楽しく</span>
-                    </label>
-                    <label class="persona-option">
-                        <input type="radio" name="personaType" value="analytical">
-                        <span class="persona-label">🔍 深掘り型</span>
-                        <span class="persona-desc">冷静に分析・仮説検証</span>
-                    </label>
-                    <label class="persona-option">
-                        <input type="radio" name="personaType" value="critical">
-                        <span class="persona-label">📝 チェック型</span>
-                        <span class="persona-desc">やや批判的に検証</span>
-                    </label>
-                    <label class="persona-option">
-                        <input type="radio" name="personaType" value="editor">
-                        <span class="persona-label">📋 要約型</span>
-                        <span class="persona-desc">まとめ役・言質確認</span>
+                    <input type="text" id="apiKey" placeholder="gsk_..." onblur="validateApi()">
+                    <label style="font-size: 0.85em; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="saveApiKey"> このブラウザに保存する
                     </label>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>深さ（1トピックあたりの質問回数）</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="depth" value="standard" checked> 標準 (3回)</label>
-                    <label><input type="radio" name="depth" value="deep"> 長く (5回)</label>
+                <div class="form-group">
+                    <label>AIのモデル</label>
+                    <select id="modelName">
+                        <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
+                        <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
+                        <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B (高速)</option>
+                        <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
+                        <option value="qwen/qwen3-32b">Qwen3 32B</option>
+                        <option value="llama-3.3-70b-versatile">Llama 3.3 70B (高品質)</option>
+                        <option value="openai/gpt-oss-120b">GPT-OSS 120B (高品質)</option>
+                        <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2 Instruct</option>
+                    </select>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>音声</label>
-                <select id="voiceName"><option value="">読み込み中...</option></select>
-            </div>
-
-            <div class="form-group">
-                <label>速度 (Rate): <span id="rateVal" class="range-val">1.3</span></label>
-                <div class="range-wrap">
-                    <span>遅</span>
-                    <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.3" oninput="document.getElementById('rateVal').innerText = this.value">
-                    <span>速</span>
+                <div class="form-group">
+                    <label>インタビューAIの性格</label>
+                    <div class="persona-options">
+                        <label class="persona-option">
+                            <input type="radio" name="personaType" value="listener" checked>
+                            <span class="persona-label">🎧 傾聴型</span>
+                            <span class="persona-desc">本音を引き出すカウンセラー風</span>
+                        </label>
+                        <label class="persona-option">
+                            <input type="radio" name="personaType" value="energetic">
+                            <span class="persona-label">🎤 盛り上げ型</span>
+                            <span class="persona-desc">ポジティブMC風に楽しく</span>
+                        </label>
+                        <label class="persona-option">
+                            <input type="radio" name="personaType" value="analytical">
+                            <span class="persona-label">🔍 深掘り型</span>
+                            <span class="persona-desc">冷静に分析・仮説検証</span>
+                        </label>
+                        <label class="persona-option">
+                            <input type="radio" name="personaType" value="critical">
+                            <span class="persona-label">📝 チェック型</span>
+                            <span class="persona-desc">やや批判的に検証</span>
+                        </label>
+                        <label class="persona-option">
+                            <input type="radio" name="personaType" value="editor">
+                            <span class="persona-label">📋 要約型</span>
+                            <span class="persona-desc">まとめ役・言質確認</span>
+                        </label>
+                    </div>
                 </div>
-                <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;">🔊 テスト再生</button>
-            </div>
 
-            <!-- ===== インタビュー内容の設定 ===== -->
-            <div class="section-title">📝 インタビュー内容</div>
+                <div class="form-group">
+                    <label>深さ（1トピックあたりの質問回数）</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="depth" value="standard" checked> 標準 (3回)</label>
+                        <label><input type="radio" name="depth" value="deep"> 長く (5回)</label>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label>タイトル</label>
-                <input type="text" id="title" value="福岡未踏に関するインタビュー">
-            </div>
+                <div class="form-group">
+                    <label>音声</label>
+                    <select id="voiceName">
+                        <option value="">読み込み中...</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label>
-                    事前知識・参考資料
-                    <span id="char-count" class="char-counter">0 / 3000</span>
-                </label>
-                <textarea id="preContext" style="height: 100px;"
-                    placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。"
-                    oninput="validateCharCount()"></textarea>
-            </div>
+                <div class="form-group">
+                    <label>速度 (Rate): <span id="rateVal" class="range-val">1.3</span></label>
+                    <div class="range-wrap">
+                        <span>遅</span>
+                        <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.3"
+                            oninput="document.getElementById('rateVal').innerText = this.value">
+                        <span>速</span>
+                    </div>
+                    <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;">🔊
+                        テスト再生</button>
+                </div>
 
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px;">
-                    聞きたいことリスト
-                    <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨ タイトルから生成</button>
-                    <span id="generate-status" style="font-size: 0.8em; color: #666;"></span>
-                </label>
-                <textarea id="topics" style="height: 180px;">
+                <!-- ===== インタビュー内容の設定 ===== -->
+                <div class="section-title">📝 インタビュー内容</div>
+
+                <div class="form-group">
+                    <label>タイトル</label>
+                    <input type="text" id="title" value="福岡未踏に関するインタビュー">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        事前知識・参考資料
+                        <span id="char-count" class="char-counter">0 / 3000</span>
+                    </label>
+                    <textarea id="preContext" style="height: 100px;"
+                        placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。"
+                        oninput="validateCharCount()"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        聞きたいことリスト
+                        <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨
+                            タイトルから生成</button>
+                        <span id="generate-status" style="font-size: 0.8em; color: #666;"></span>
+                    </label>
+                    <textarea id="topics" style="height: 180px;">
 1. 自己紹介
 2. 福岡未踏ではどんなアプリを開発していますか
 3. 福岡未踏に応募しようと思ったきっかけ
 4. 福岡未踏を経験してどうでしたか？
 5. アプリの今後は？
 6. 来年度応募するクリエータへのメッセージ</textarea>
-            </div>
+                </div>
 
-            <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
-            <p id="start-help" class="help-text" style="text-align:center; color:#dc3545;">※APIキーを入力してください</p>
-        </div>
-    </div>
-
-    <div class="col col-2">
-        <div class="col-header">🗂 インタビュー履歴</div>
-        <div class="col-content">
-            <div id="history-list">
-                <div style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>
-            </div>
-            <div id="history-detail" style="display: none;">
-                <!-- 詳細はここに動的に表示 -->
+                <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
+                <p id="start-help" class="help-text" style="text-align:center; color:#dc3545;">※APIキーを入力してください</p>
             </div>
         </div>
+
+        <div class="col col-2">
+            <div class="col-header">🗂 インタビュー履歴</div>
+            <div class="col-content">
+                <div id="history-list">
+                    <div style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>
+                </div>
+                <div id="history-detail" style="display: none;">
+                    <!-- 詳細はここに動的に表示 -->
+                </div>
+            </div>
+        </div>
+
     </div>
 
-</div>
-
-<script>
-    // AI人格プロンプト定義
-    const PERSONA_PROMPTS = {
-        listener: `Act as an empathetic, highly skilled listener-interviewer focused on drawing out my honest feelings, values, and unspoken motives. Your goal is to make me feel safe enough to speak candidly while still clarifying my thinking.
+    <script>
+        // AI人格プロンプト定義
+        const PERSONA_PROMPTS = {
+            listener: `Act as an empathetic, highly skilled listener-interviewer focused on drawing out my honest feelings, values, and unspoken motives. Your goal is to make me feel safe enough to speak candidly while still clarifying my thinking.
 Rules:
 - You must reply in Japanese only.
 - Ask exactly one open-ended question at a time.
@@ -250,7 +637,7 @@ Rules:
 Forbidden: judging me, giving advice too early, debating, or concluding on my behalf.
 Close: When I say "まとめて" or when the interview seems complete, summarize my core points as (1) feelings, (2) values, (3) constraints, (4) what I truly want, and ask if the summary is accurate.`,
 
-        energetic: `Act as an energetic, upbeat interviewer who hypes me up and draws out vivid stories, excitement, and memorable moments. Your goal is to increase momentum and help me talk more freely and concretely.
+            energetic: `Act as an energetic, upbeat interviewer who hypes me up and draws out vivid stories, excitement, and memorable moments. Your goal is to increase momentum and help me talk more freely and concretely.
 Rules:
 - You must reply in Japanese only.
 - Ask exactly one question at a time, preferably open-ended.
@@ -261,7 +648,7 @@ Rules:
 Forbidden: long lectures, strict cross-examination, negativity that shuts me down.
 Close: After several turns, offer a punchy 3-bullet recap of highlights and ask which part to expand next.`,
 
-        analytical: `Act as a calm, analytical interviewer who systematically digs into assumptions, causes, constraints, and evidence. Your goal is to transform my statements into clear, testable understanding.
+            analytical: `Act as a calm, analytical interviewer who systematically digs into assumptions, causes, constraints, and evidence. Your goal is to transform my statements into clear, testable understanding.
 Rules:
 - You must reply in Japanese only.
 - Ask exactly one question at a time.
@@ -272,7 +659,7 @@ Rules:
 Forbidden: emotional judgment, unnecessary hype, making up facts, concluding without evidence.
 Close: When enough info is gathered, summarize as: (1) claim, (2) evidence, (3) assumptions, (4) risks/unknowns, (5) next verification step, and ask for confirmation.`,
 
-        critical: `Act as a polite but critical interviewer (a "soft reviewer") who stress-tests my claims for weaknesses, inconsistencies, bias, and missing evidence. Your goal is constructive scrutiny, not personal attack.
+            critical: `Act as a polite but critical interviewer (a "soft reviewer") who stress-tests my claims for weaknesses, inconsistencies, bias, and missing evidence. Your goal is constructive scrutiny, not personal attack.
 Rules:
 - You must reply in Japanese only.
 - Ask exactly one question at a time.
@@ -283,7 +670,7 @@ Rules:
 Forbidden: sarcasm, ridicule, ad hominem, endless nitpicking without purpose.
 Close: After several turns, list the top 3 concerns as questions, then ask which one we should resolve first.`,
 
-        editor: `Act as an editor-interviewer who structures messy conversation into a clear narrative and actionable decisions. Your goal is to produce an accurate, agreed-upon summary and next steps.
+            editor: `Act as an editor-interviewer who structures messy conversation into a clear narrative and actionable decisions. Your goal is to produce an accurate, agreed-upon summary and next steps.
 Rules:
 - You must reply in Japanese only.
 - Ask exactly one question at a time.
@@ -292,133 +679,133 @@ Rules:
 - Drive toward outputs: conclusion, key bullets, and next actions.
 Forbidden: adding details I didn't say, exaggeration, changing meaning, pushing your own agenda.
 Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約, (3)未確定事項, (4)次のアクション, (5)公開可否/範囲, then ask "この要約で正しいか".`
-    };
+        };
 
-    const PERSONA_LABELS = {
-        listener: '🎧 傾聴型',
-        energetic: '🎤 盛り上げ型',
-        analytical: '🔍 深掘り型',
-        critical: '📝 チェック型',
-        editor: '📋 要約型'
-    };
+        const PERSONA_LABELS = {
+            listener: '🎧 傾聴型',
+            energetic: '🎤 盛り上げ型',
+            analytical: '🔍 深掘り型',
+            critical: '📝 チェック型',
+            editor: '📋 要約型'
+        };
 
-    // 選択された人格タイプを取得
-    function getSelectedPersonaType() {
-        return document.querySelector('input[name="personaType"]:checked')?.value || 'listener';
-    }
-
-    // 選択された人格のプロンプトを取得
-    function getSelectedPersonaPrompt() {
-        return PERSONA_PROMPTS[getSelectedPersonaType()];
-    }
-
-    let isApiValid = false;
-    let isCharValid = true;
-    const MAX_CHARS = 3000;
-
-    const DB_NAME = "InterviewDB";
-    const DB_VERSION = 1;
-    const STORE_NAME = "archives";
-
-    // --- 文字数バリデーション ---
-    function validateCharCount() {
-        const text = document.getElementById('preContext').value;
-        const count = text.length;
-        const counterEl = document.getElementById('char-count');
-        
-        counterEl.innerText = `${count} / ${MAX_CHARS}`;
-        
-        if (count > MAX_CHARS) {
-            counterEl.classList.add('char-over');
-            isCharValid = false;
-        } else {
-            counterEl.classList.remove('char-over');
-            isCharValid = true;
-        }
-        updateStartButton();
-    }
-
-    // --- API Validation ---
-    async function validateApi() {
-        const key = document.getElementById('apiKey').value.trim();
-        const statusEl = document.getElementById('api-status');
-
-        if (!key) {
-            statusEl.innerText = "";
-            isApiValid = false;
-            updateStartButton();
-            return;
+        // 選択された人格タイプを取得
+        function getSelectedPersonaType() {
+            return document.querySelector('input[name="personaType"]:checked')?.value || 'listener';
         }
 
-        statusEl.className = "status-indicator status-loading";
-        statusEl.innerText = "確認中...";
+        // 選択された人格のプロンプトを取得
+        function getSelectedPersonaPrompt() {
+            return PERSONA_PROMPTS[getSelectedPersonaType()];
+        }
 
-        try {
-            const res = await fetch("https://api.groq.com/openai/v1/models", {
-                headers: { "Authorization": `Bearer ${key}` }
-            });
+        let isApiValid = false;
+        let isCharValid = true;
+        const MAX_CHARS = 3000;
 
-            if (res.ok) {
-                statusEl.className = "status-indicator status-ok";
-                statusEl.innerText = "✅ 有効";
-                isApiValid = true;
+        const DB_NAME = "InterviewDB";
+        const DB_VERSION = 1;
+        const STORE_NAME = "archives";
+
+        // --- 文字数バリデーション ---
+        function validateCharCount() {
+            const text = document.getElementById('preContext').value;
+            const count = text.length;
+            const counterEl = document.getElementById('char-count');
+
+            counterEl.innerText = `${count} / ${MAX_CHARS}`;
+
+            if (count > MAX_CHARS) {
+                counterEl.classList.add('char-over');
+                isCharValid = false;
             } else {
+                counterEl.classList.remove('char-over');
+                isCharValid = true;
+            }
+            updateStartButton();
+        }
+
+        // --- API Validation ---
+        async function validateApi() {
+            const key = document.getElementById('apiKey').value.trim();
+            const statusEl = document.getElementById('api-status');
+
+            if (!key) {
+                statusEl.innerText = "";
+                isApiValid = false;
+                updateStartButton();
+                return;
+            }
+
+            statusEl.className = "status-indicator status-loading";
+            statusEl.innerText = "確認中...";
+
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/models", {
+                    headers: { "Authorization": `Bearer ${key}` }
+                });
+
+                if (res.ok) {
+                    statusEl.className = "status-indicator status-ok";
+                    statusEl.innerText = "✅ 有効";
+                    isApiValid = true;
+                } else {
+                    statusEl.className = "status-indicator status-err";
+                    statusEl.innerText = "❌ 無効";
+                    isApiValid = false;
+                }
+            } catch (e) {
                 statusEl.className = "status-indicator status-err";
-                statusEl.innerText = "❌ 無効";
+                statusEl.innerText = "❌ エラー";
                 isApiValid = false;
             }
-        } catch (e) {
-            statusEl.className = "status-indicator status-err";
-            statusEl.innerText = "❌ エラー";
-            isApiValid = false;
-        }
-        updateStartButton();
-    }
-
-    function updateStartButton() {
-        const btn = document.getElementById('startBtn');
-        const help = document.getElementById('start-help');
-        
-        // APIキーが有効かつ、文字数制限内であれば押せる
-        const ready = isApiValid && isCharValid;
-        
-        btn.disabled = !ready;
-        
-        if (!isApiValid) {
-            help.innerText = "※有効なAPIキーを入力してください";
-            help.style.display = 'block';
-        } else if (!isCharValid) {
-            help.innerText = "※事前知識の文字数が上限を超えています";
-            help.style.display = 'block';
-        } else {
-            help.style.display = 'none';
-        }
-    }
-
-    // --- トピック自動生成 ---
-    async function generateTopics() {
-        const apiKey = document.getElementById('apiKey').value.trim();
-        const title = document.getElementById('title').value.trim();
-        const personaType = getSelectedPersonaType();
-        const personaLabel = PERSONA_LABELS[personaType];
-        const modelName = document.getElementById('modelName').value;
-
-        if (!apiKey) {
-            alert('APIキーを入力してください');
-            return;
-        }
-        if (!title) {
-            alert('タイトルを入力してください');
-            return;
+            updateStartButton();
         }
 
-        const btn = document.getElementById('generateBtn');
-        const statusEl = document.getElementById('generate-status');
+        function updateStartButton() {
+            const btn = document.getElementById('startBtn');
+            const help = document.getElementById('start-help');
 
-        btn.disabled = true;
-        statusEl.innerText = '生成中...';
+            // APIキーが有効かつ、文字数制限内であれば押せる
+            const ready = isApiValid && isCharValid;
 
-        const systemPrompt = `あなたは創造的なインタビュー企画者です。
+            btn.disabled = !ready;
+
+            if (!isApiValid) {
+                help.innerText = "※有効なAPIキーを入力してください";
+                help.style.display = 'block';
+            } else if (!isCharValid) {
+                help.innerText = "※事前知識の文字数が上限を超えています";
+                help.style.display = 'block';
+            } else {
+                help.style.display = 'none';
+            }
+        }
+
+        // --- トピック自動生成 ---
+        async function generateTopics() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const title = document.getElementById('title').value.trim();
+            const personaType = getSelectedPersonaType();
+            const personaLabel = PERSONA_LABELS[personaType];
+            const modelName = document.getElementById('modelName').value;
+
+            if (!apiKey) {
+                alert('APIキーを入力してください');
+                return;
+            }
+            if (!title) {
+                alert('タイトルを入力してください');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const statusEl = document.getElementById('generate-status');
+
+            btn.disabled = true;
+            statusEl.innerText = '生成中...';
+
+            const systemPrompt = `あなたは創造的なインタビュー企画者です。
 与えられたインタビュータイトルから、興味深い質問トピックを10個生成してください。
 
 インタビュアーのスタイル：${personaLabel}
@@ -431,210 +818,210 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 - 番号付きリストで出力（1. 2. 3. ...）
 - 余計な説明は不要、リストのみ出力`;
 
-        const userPrompt = `インタビュータイトル：「${title}」\n\nこのインタビューで聞くべき質問トピックを10個、創造的に生成してください。`;
+            const userPrompt = `インタビュータイトル：「${title}」\n\nこのインタビューで聞くべき質問トピックを10個、創造的に生成してください。`;
 
-        try {
-            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: modelName,
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userPrompt }
-                    ],
-                    temperature: 0.9,
-                    max_tokens: 1024
-                })
-            });
+            try {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: userPrompt }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1024
+                    })
+                });
 
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err.error?.message || response.statusText);
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error?.message || response.statusText);
+                }
+
+                const data = await response.json();
+                const generatedText = data.choices[0].message.content;
+
+                document.getElementById('topics').value = generatedText;
+                statusEl.innerText = '✅ 生成完了';
+                setTimeout(() => { statusEl.innerText = ''; }, 2000);
+
+            } catch (e) {
+                console.error('Generate Error:', e);
+                statusEl.innerText = '❌ エラー';
+                alert('生成に失敗しました: ' + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // --- 設定保存と開始 ---
+        function saveAndStart() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) return alert("APIキーを入力してください");
+
+            // APIキーの保存/削除
+            if (document.getElementById('saveApiKey').checked) {
+                localStorage.setItem('groqApiKey', apiKey);
+            } else {
+                localStorage.removeItem('groqApiKey');
             }
 
-            const data = await response.json();
-            const generatedText = data.choices[0].message.content;
-
-            document.getElementById('topics').value = generatedText;
-            statusEl.innerText = '✅ 生成完了';
-            setTimeout(() => { statusEl.innerText = ''; }, 2000);
-
-        } catch (e) {
-            console.error('Generate Error:', e);
-            statusEl.innerText = '❌ エラー';
-            alert('生成に失敗しました: ' + e.message);
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    // --- 設定保存と開始 ---
-    function saveAndStart() {
-        const apiKey = document.getElementById('apiKey').value.trim();
-        if (!apiKey) return alert("APIキーを入力してください");
-
-        // APIキーの保存/削除
-        if (document.getElementById('saveApiKey').checked) {
-            localStorage.setItem('groqApiKey', apiKey);
-        } else {
-            localStorage.removeItem('groqApiKey');
-        }
-
-        const config = {
-            apiKey: apiKey,
-            modelName: document.getElementById('modelName').value,
-            title: document.getElementById('title').value,
-            // ★ 事前知識を保存
-            context: document.getElementById('preContext').value,
-            topics: document.getElementById('topics').value.split('\n').filter(line => line.trim() !== ''),
-            depth: document.querySelector('input[name="depth"]:checked').value,
-            voiceName: document.getElementById('voiceName').value, 
-            rate: parseFloat(document.getElementById('rate').value),
-            pitch: 1.0,
-            volume: 1.0,
-            personaType: getSelectedPersonaType(),
-            persona: getSelectedPersonaPrompt()
-        };
-
-        localStorage.setItem('interviewConfig', JSON.stringify(config));
-        window.location.href = 'interview_app.html';
-    }
-
-    // --- 音声関連 ---
-    function populateVoiceList() {
-        if(typeof speechSynthesis === 'undefined') return;
-        const voices = speechSynthesis.getVoices();
-        const voiceSelect = document.getElementById('voiceName');
-        const jaVoices = voices.filter(v => v.lang.includes('ja') || v.lang.includes('JP'));
-        voiceSelect.innerHTML = '';
-        if (jaVoices.length === 0) {
-            const option = document.createElement('option');
-            option.text = "日本語音声なし";
-            voiceSelect.add(option); return;
-        }
-        jaVoices.forEach((voice) => {
-            const option = document.createElement('option');
-            option.textContent = `${voice.name} (${voice.lang})`;
-            option.value = voice.name;
-            if(voice.name === 'Google 日本語') option.selected = true;
-            voiceSelect.appendChild(option);
-        });
-    }
-    populateVoiceList();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = populateVoiceList;
-    }
-
-    // 保存されたAPIキーを読み込む
-    (function loadSavedApiKey() {
-        const savedKey = localStorage.getItem('groqApiKey');
-        if (savedKey) {
-            document.getElementById('apiKey').value = savedKey;
-            document.getElementById('saveApiKey').checked = true;
-            validateApi();
-        }
-    })();
-
-    function previewVoice() {
-        const voiceName = document.getElementById('voiceName').value;
-        const rate = parseFloat(document.getElementById('rate').value);
-        if (!voiceName) return alert("音声が読み込まれていません");
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance("今日はインタビューよろしくお願いします！");
-        utterance.rate = rate; utterance.volume = 1.0; utterance.pitch = 1.0;
-        const voices = window.speechSynthesis.getVoices();
-        const selectedVoice = voices.find(v => v.name === voiceName);
-        if (selectedVoice) utterance.voice = selectedVoice;
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // --- DB & 履歴表示 ---
-    function openDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onupgradeneeded = (e) => { 
-                const db = e.target.result; 
-                if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
+            const config = {
+                apiKey: apiKey,
+                modelName: document.getElementById('modelName').value,
+                title: document.getElementById('title').value,
+                // ★ 事前知識を保存
+                context: document.getElementById('preContext').value,
+                topics: document.getElementById('topics').value.split('\n').filter(line => line.trim() !== ''),
+                depth: document.querySelector('input[name="depth"]:checked').value,
+                voiceName: document.getElementById('voiceName').value,
+                rate: parseFloat(document.getElementById('rate').value),
+                pitch: 1.0,
+                volume: 1.0,
+                personaType: getSelectedPersonaType(),
+                persona: getSelectedPersonaPrompt()
             };
-            request.onsuccess = (e) => resolve(e.target.result);
-            request.onerror = (e) => reject(e.target.error);
-        });
-    }
 
-    async function loadHistory() {
-        const listEl = document.getElementById('history-list');
-        const detailEl = document.getElementById('history-detail');
-        detailEl.style.display = 'none';
+            localStorage.setItem('interviewConfig', JSON.stringify(config));
+            window.location.href = 'interview_app.html';
+        }
 
-        try {
-            const db = await openDB();
-            const tx = db.transaction(STORE_NAME, "readonly");
-            const store = tx.objectStore(STORE_NAME);
-            const request = store.getAll();
+        // --- 音声関連 ---
+        function populateVoiceList() {
+            if (typeof speechSynthesis === 'undefined') return;
+            const voices = speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voiceName');
+            const jaVoices = voices.filter(v => v.lang.includes('ja') || v.lang.includes('JP'));
+            voiceSelect.innerHTML = '';
+            if (jaVoices.length === 0) {
+                const option = document.createElement('option');
+                option.text = "日本語音声なし";
+                voiceSelect.add(option); return;
+            }
+            jaVoices.forEach((voice) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                if (voice.name === 'Google 日本語') option.selected = true;
+                voiceSelect.appendChild(option);
+            });
+        }
+        populateVoiceList();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
 
-            request.onsuccess = () => {
-                const records = request.result;
-                records.sort((a, b) => b.id - a.id);
+        // 保存されたAPIキーを読み込む
+        (function loadSavedApiKey() {
+            const savedKey = localStorage.getItem('groqApiKey');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                document.getElementById('saveApiKey').checked = true;
+                validateApi();
+            }
+        })();
 
-                if (records.length === 0) {
-                    listEl.innerHTML = `
+        function previewVoice() {
+            const voiceName = document.getElementById('voiceName').value;
+            const rate = parseFloat(document.getElementById('rate').value);
+            if (!voiceName) return alert("音声が読み込まれていません");
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance("今日はインタビューよろしくお願いします！");
+            utterance.rate = rate; utterance.volume = 1.0; utterance.pitch = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            const selectedVoice = voices.find(v => v.name === voiceName);
+            if (selectedVoice) utterance.voice = selectedVoice;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- DB & 履歴表示 ---
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function loadHistory() {
+            const listEl = document.getElementById('history-list');
+            const detailEl = document.getElementById('history-detail');
+            detailEl.style.display = 'none';
+
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    const records = request.result;
+                    records.sort((a, b) => b.id - a.id);
+
+                    if (records.length === 0) {
+                        listEl.innerHTML = `
                         <div class="history-empty">
                             <div class="history-empty-icon">📭</div>
                             <div>まだインタビュー履歴がありません</div>
                             <div style="font-size: 0.85em; margin-top: 5px;">インタビューを完了すると、ここに表示されます</div>
                         </div>`;
-                    return;
-                }
+                        return;
+                    }
 
-                listEl.innerHTML = `<div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">${records.length}件の履歴</div>`;
-                records.forEach(rec => {
-                    const item = document.createElement('div');
-                    item.className = 'history-item';
-                    item.innerHTML = `<div class="history-date">${rec.date}</div><div class="history-title">${rec.title}</div>`;
-                    item.onclick = () => {
-                        document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-                        item.classList.add('active');
-                        showDetail(rec);
-                    };
-                    listEl.appendChild(item);
-                });
-            };
-        } catch (e) {
-            console.error(e);
-            listEl.innerHTML = "DBエラー";
+                    listEl.innerHTML = `<div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">${records.length}件の履歴</div>`;
+                    records.forEach(rec => {
+                        const item = document.createElement('div');
+                        item.className = 'history-item';
+                        item.innerHTML = `<div class="history-date">${rec.date}</div><div class="history-title">${rec.title}</div>`;
+                        item.onclick = () => {
+                            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+                            item.classList.add('active');
+                            showDetail(rec);
+                        };
+                        listEl.appendChild(item);
+                    });
+                };
+            } catch (e) {
+                console.error(e);
+                listEl.innerHTML = "DBエラー";
+            }
         }
-    }
 
-    // 現在選択中のレコードを保持
-    let selectedRecord = null;
+        // 現在選択中のレコードを保持
+        let selectedRecord = null;
 
-    function showDetail(rec) {
-        selectedRecord = rec;
-        const listEl = document.getElementById('history-list');
-        const detailEl = document.getElementById('history-detail');
+        function showDetail(rec) {
+            selectedRecord = rec;
+            const listEl = document.getElementById('history-list');
+            const detailEl = document.getElementById('history-detail');
 
-        // 履歴リストを非表示にして、詳細を表示
-        listEl.style.display = 'none';
-        detailEl.style.display = 'block';
+            // 履歴リストを非表示にして、詳細を表示
+            listEl.style.display = 'none';
+            detailEl.style.display = 'block';
 
-        const chatHtml = rec.history.map(h => {
-            const role = h.role === 'assistant' ? '🤖 AI' : (h.role === 'user' ? '👤 User' : h.role);
-            const roleClass = h.role === 'assistant' ? 'chat-ai' : 'chat-user';
-            const text = h.content;
-            return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}</div><div>${text}</div></div>`;
-        }).join('');
+            const chatHtml = rec.history.map(h => {
+                const role = h.role === 'assistant' ? '🤖 AI' : (h.role === 'user' ? '👤 User' : h.role);
+                const roleClass = h.role === 'assistant' ? 'chat-ai' : 'chat-user';
+                const text = h.content;
+                return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}</div><div>${text}</div></div>`;
+            }).join('');
 
-        // 設定情報のHTML（設定が保存されている場合のみ表示）
-        let settingsHtml = '';
-        if (rec.settings) {
-            const s = rec.settings;
-            const topicsText = rec.topics && rec.topics.length > 0 ? rec.topics.join(' / ') : '不明';
-            const topicsDisplay = topicsText.length > 150 ? topicsText.substring(0, 150) + '...' : topicsText;
-            settingsHtml = `
+            // 設定情報のHTML（設定が保存されている場合のみ表示）
+            let settingsHtml = '';
+            if (rec.settings) {
+                const s = rec.settings;
+                const topicsText = rec.topics && rec.topics.length > 0 ? rec.topics.join(' / ') : '不明';
+                const topicsDisplay = topicsText.length > 150 ? topicsText.substring(0, 150) + '...' : topicsText;
+                settingsHtml = `
                 <div class="detail-section-title">使用設定</div>
                 <div class="settings-info">
                     <div class="setting-row"><span class="setting-label">モデル:</span> ${s.modelName || '不明'}</div>
@@ -647,9 +1034,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 </div>
                 <button onclick="applySettings()" class="btn-apply-settings">🔄 この設定をセット</button>
             `;
-        }
+            }
 
-        detailEl.innerHTML = `
+            detailEl.innerHTML = `
             <button onclick="hideDetail()" class="back-to-list">← 履歴一覧に戻る</button>
             <div class="detail-header">
                 <div class="detail-title">${rec.title}</div>
@@ -663,103 +1050,104 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             <div class="detail-section-title">会話ログ (${rec.history.length}ターン)</div>
             <div class="detail-chat">${chatHtml}</div>
         `;
-    }
-
-    function hideDetail() {
-        const listEl = document.getElementById('history-list');
-        const detailEl = document.getElementById('history-detail');
-
-        // 詳細を非表示にして、履歴リストを表示
-        detailEl.style.display = 'none';
-        listEl.style.display = 'block';
-
-        // アクティブ状態をリセット
-        document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-        selectedRecord = null;
-    }
-
-    async function deleteRecord(id) {
-        if (!confirm('この履歴を削除しますか？\n削除すると元に戻せません。')) {
-            return;
-        }
-        try {
-            const db = await openDB();
-            const tx = db.transaction(STORE_NAME, "readwrite");
-            const store = tx.objectStore(STORE_NAME);
-            store.delete(id);
-            tx.oncomplete = () => {
-                selectedRecord = null;
-                // 履歴リストを再表示して更新
-                loadHistory();
-                alert('削除しました');
-            };
-        } catch (e) {
-            console.error("Delete Error:", e);
-            alert('削除に失敗しました');
-        }
-    }
-
-    function applySettings() {
-        if (!selectedRecord || !selectedRecord.settings) {
-            alert('この履歴には設定情報が保存されていません');
-            return;
-        }
-        const s = selectedRecord.settings;
-        const rec = selectedRecord;
-
-        // フォームに設定を反映
-        document.getElementById('title').value = rec.title || '';
-        document.getElementById('preContext').value = s.context || '';
-        document.getElementById('topics').value = rec.topics ? rec.topics.join('\n') : '';
-
-        // AI人格選択
-        if (s.personaType) {
-            const personaRadio = document.querySelector(`input[name="personaType"][value="${s.personaType}"]`);
-            if (personaRadio) personaRadio.checked = true;
         }
 
-        // モデル選択
-        const modelSelect = document.getElementById('modelName');
-        if (s.modelName) {
-            for (let opt of modelSelect.options) {
-                if (opt.value === s.modelName) {
-                    opt.selected = true;
-                    break;
-                }
+        function hideDetail() {
+            const listEl = document.getElementById('history-list');
+            const detailEl = document.getElementById('history-detail');
+
+            // 詳細を非表示にして、履歴リストを表示
+            detailEl.style.display = 'none';
+            listEl.style.display = 'block';
+
+            // アクティブ状態をリセット
+            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+            selectedRecord = null;
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('この履歴を削除しますか？\n削除すると元に戻せません。')) {
+                return;
+            }
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const store = tx.objectStore(STORE_NAME);
+                store.delete(id);
+                tx.oncomplete = () => {
+                    selectedRecord = null;
+                    // 履歴リストを再表示して更新
+                    loadHistory();
+                    alert('削除しました');
+                };
+            } catch (e) {
+                console.error("Delete Error:", e);
+                alert('削除に失敗しました');
             }
         }
 
-        // 深さ
-        if (s.depth) {
-            const depthRadio = document.querySelector(`input[name="depth"][value="${s.depth}"]`);
-            if (depthRadio) depthRadio.checked = true;
-        }
+        function applySettings() {
+            if (!selectedRecord || !selectedRecord.settings) {
+                alert('この履歴には設定情報が保存されていません');
+                return;
+            }
+            const s = selectedRecord.settings;
+            const rec = selectedRecord;
 
-        // 音声（リストが読み込まれている場合）
-        const voiceSelect = document.getElementById('voiceName');
-        if (s.voiceName) {
-            for (let opt of voiceSelect.options) {
-                if (opt.value === s.voiceName) {
-                    opt.selected = true;
-                    break;
+            // フォームに設定を反映
+            document.getElementById('title').value = rec.title || '';
+            document.getElementById('preContext').value = s.context || '';
+            document.getElementById('topics').value = rec.topics ? rec.topics.join('\n') : '';
+
+            // AI人格選択
+            if (s.personaType) {
+                const personaRadio = document.querySelector(`input[name="personaType"][value="${s.personaType}"]`);
+                if (personaRadio) personaRadio.checked = true;
+            }
+
+            // モデル選択
+            const modelSelect = document.getElementById('modelName');
+            if (s.modelName) {
+                for (let opt of modelSelect.options) {
+                    if (opt.value === s.modelName) {
+                        opt.selected = true;
+                        break;
+                    }
                 }
             }
+
+            // 深さ
+            if (s.depth) {
+                const depthRadio = document.querySelector(`input[name="depth"][value="${s.depth}"]`);
+                if (depthRadio) depthRadio.checked = true;
+            }
+
+            // 音声（リストが読み込まれている場合）
+            const voiceSelect = document.getElementById('voiceName');
+            if (s.voiceName) {
+                for (let opt of voiceSelect.options) {
+                    if (opt.value === s.voiceName) {
+                        opt.selected = true;
+                        break;
+                    }
+                }
+            }
+
+            // 速度
+            if (s.rate) {
+                document.getElementById('rate').value = s.rate;
+                document.getElementById('rateVal').innerText = s.rate;
+            }
+
+            // 文字数カウント更新
+            validateCharCount();
+
+            alert('設定をセットしました！左のフォームを確認してください。');
         }
 
-        // 速度
-        if (s.rate) {
-            document.getElementById('rate').value = s.rate;
-            document.getElementById('rateVal').innerText = s.rate;
-        }
-
-        // 文字数カウント更新
-        validateCharCount();
-
-        alert('設定をセットしました！左のフォームを確認してください。');
-    }
-
-    loadHistory();
-</script>
+        loadHistory();
+    </script>
 
 </body>
+
 </html>

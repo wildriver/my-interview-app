@@ -138,9 +138,7 @@
     let timerInterval;
     let startTime;
 
-    let currentTopicIndex = 0;
-    let currentTopicTurnCount = 0; 
-    let targetDepth = 3; 
+    let currentTopicIndex = 0; 
 
     window.speechSynthesis.onvoiceschanged = () => { availableVoices = window.speechSynthesis.getVoices(); };
 
@@ -156,8 +154,6 @@
 
         document.getElementById('page-title').innerText = CONFIG.title;
         document.getElementById('page-topics').innerText = "聞きたいこと: " + CONFIG.topics.length + "項目";
-        
-        targetDepth = CONFIG.depth === "deep" ? 5 : 3;
 
         setupRecognition();
         setupVisualizerCanvas();
@@ -231,10 +227,9 @@
     async function startInterview() {
         if (!CONFIG.apiKey) return alert("APIキーが設定されていません");
         
-        conversationHistory = []; 
+        conversationHistory = [];
         currentTopicIndex = 0;
-        currentTopicTurnCount = 0;
-        
+
         document.getElementById('chat-log').innerHTML = ''; 
         document.getElementById('summary-section').style.display = 'none'; 
         document.getElementById('summary-box').innerText = '...';
@@ -260,61 +255,36 @@
     }
 
     async function processUserResponse(userText) {
-        isThinking = true; 
+        isThinking = true;
         updateStatus('thinking', 'AIが考えています (Groq)...');
-        
+
         conversationHistory.push({ role: "user", content: userText });
-        currentTopicTurnCount++;
 
-        let nextInstruction = "";
-
-        if (currentTopicTurnCount < targetDepth) {
-            const topic = CONFIG.topics[currentTopicIndex];
-            if (currentTopicTurnCount === 1) {
-                // 1回目は深掘り
-                nextInstruction = `現在、トピック「${topic}」について話しています。
-ユーザーの回答を受けて、理由や具体的なエピソードを深掘りしてください。`;
-            } else {
-                // 2回目以降は広げる
-                nextInstruction = `現在、トピック「${topic}」について話しています。
-**「他には？」「別の視点では？」**と、話題を広げる質問をしてください。`;
-            }
-        } else {
-            currentTopicIndex++;
-            currentTopicTurnCount = 0;
-
-            if (currentTopicIndex < CONFIG.topics.length) {
-                const nextTopic = CONFIG.topics[currentTopicIndex];
-                // トピック切り替え指示（前置きなしで質問させる）
-                nextInstruction = `この話題は十分です。
-**即座に次のトピック「${nextTopic}」についての質問**をしてください。`;
-            } else {
-                nextInstruction = `全てのトピックが終了しました。
-**「最後に言い残したことはありますか？」**と聞いてください。`;
-                
-                if (currentTopicIndex > CONFIG.topics.length) { 
-                    nextInstruction = `**インタビューを終了する挨拶**をしてください。感謝を伝え、「それではインタビューを終了します」と言ってください。`;
-                }
-                currentTopicIndex++; 
-            }
-        }
-
+        // 終了希望チェック
+        let forceEnd = false;
         if (userText.includes("やめて") || userText.includes("終了して") || userText.includes("ストップ")) {
-            nextInstruction = `ユーザーが終了を希望しています。謝罪し、直ちに「それではインタビューを終了します」と言って締めくくってください。`;
+            forceEnd = true;
         }
 
         try {
-            const systemPrompt = buildDynamicPrompt(nextInstruction);
-            // ★重要：履歴スライド処理を含んだAPI呼び出し
-            const aiText = await callGroqAPI(conversationHistory, systemPrompt);
+            const systemPrompt = buildDynamicPrompt(forceEnd);
+            const rawAiText = await callGroqAPI(conversationHistory, systemPrompt);
+
+            // [[NEXT]]マーカーを検出してトピック移行
+            let aiText = rawAiText;
+            if (rawAiText.includes("[[NEXT]]")) {
+                aiText = rawAiText.replace("[[NEXT]]", "").trim();
+                currentTopicIndex++;
+                console.log(`Topic advanced to: ${currentTopicIndex}`);
+            }
 
             addMessage('ai', aiText);
             conversationHistory.push({ role: "assistant", content: aiText });
-            
+
             if (aiText.includes("終了します") || aiText.includes("終わります")) {
                 stopTimer();
                 updateStatus('finishing', '挨拶の読み上げ中...');
-                
+
                 speak(aiText, () => {
                     updateStatus('finishing', 'サマリー作成中...');
                     stopRecognition();
@@ -333,24 +303,93 @@
         }
     }
 
-    function buildDynamicPrompt(instruction) {
+    function buildDynamicPrompt(forceEnd = false) {
         const contextText = CONFIG.context ? `\n# Pre-knowledge / Background Context\n${CONFIG.context}\n` : "";
-        
+
+        // トピック一覧と現在位置
+        const topicsList = CONFIG.topics.map((t, i) => {
+            if (i < currentTopicIndex) return `  ✓ ${t} (完了)`;
+            if (i === currentTopicIndex) return `  ▶ ${t} (現在)`;
+            return `  ○ ${t}`;
+        }).join('\n');
+
+        const currentTopic = CONFIG.topics[currentTopicIndex] || null;
+        const remainingCount = CONFIG.topics.length - currentTopicIndex;
+        const isLastTopic = currentTopicIndex >= CONFIG.topics.length - 1;
+        const allDone = currentTopicIndex >= CONFIG.topics.length;
+
+        // 状況に応じた指示
+        let situationInstruction = "";
+        if (forceEnd) {
+            situationInstruction = `
+## 現在の状況: ユーザーが終了を希望
+ユーザーが終了を希望しています。感謝を伝え、「それではインタビューを終了します」と言って締めくくってください。`;
+        } else if (allDone) {
+            situationInstruction = `
+## 現在の状況: 全トピック完了
+全てのトピックが終わりました。「最後に何か言い残したことはありますか？」と聞いてください。
+相手が特にないと言ったら、感謝を伝え「それではインタビューを終了します」と締めくくってください。`;
+        } else {
+            const depthHint = CONFIG.depth === "deep"
+                ? "（じっくり探求モード：各トピック4〜6回程度のやり取りを目安に、しっかり深掘りしてください）"
+                : "（標準モード：各トピック2〜4回程度のやり取りを目安に、テンポよく進めてください）";
+            situationInstruction = `
+## 現在の状況
+- 現在のトピック: 「${currentTopic}」
+- 残りトピック数: ${remainingCount}個${isLastTopic ? '（これが最後のトピック）' : ''}
+- インタビュースタイル: ${depthHint}
+
+## トピック一覧
+${topicsList}`;
+        }
+
         return `
 # Persona
 ${CONFIG.persona}
-
 ${contextText}
+${situationInstruction}
 
-# Instruction
-${instruction}
+# インタビュー進行ルール
 
-# Strict Rules
-1. **回答者の発言をオウム返ししたり、要約したりしないでください。** （「〜ということですね」「〜なんですね」は禁止）
-2. **回答に対して、まず短い自然な相槌で始めてください。** 例: 「なるほど、」「へぇ〜、」「あぁ、」「おお、」「そうなんですね、」など。ただし毎回同じ相槌にならないよう、バリエーションをつけてください。
-3. 相槌の後は、長い前置きなしで**すぐに質問を投げかけてください。**
-4. 発言の最後は必ず**質問**で終わってください。
-5. 終了する時以外は、「終了します」と言わないでください。
+## 対話の質に応じた対応（重要！）
+
+### 回答が短い・あっさりしている場合
+以下のいずれかで**もう少し引き出して**ください：
+- 「もう少し詳しく聞かせてもらえますか？」
+- 「それって具体的にはどういうことですか？」
+- 「例えばどんな場面でそう感じましたか？」
+- 「〜という理解で合ってますか？」と別の言葉で確認
+- 比喩や例え話で「つまり〜みたいな感じですか？」
+
+### 回答が曖昧・抽象的な場合
+- 「一番印象に残っているエピソードを教えてください」
+- 「時系列で言うと、最初に何が起きましたか？」
+- 「数字で言うとどのくらいですか？」
+
+### 回答が充実している・盛り上がっている場合
+どんどん深掘りしてください：
+- 感情を掘る：「その時どんな気持ちでしたか？」
+- 理由を掘る：「なぜそう思ったんですか？」
+- 影響を掘る：「それが今にどう繋がっていますか？」
+- 意外な角度：「逆に〜だったらどうでしたか？」
+
+### 次のトピックに移るタイミング
+以下の場合に次へ進んでください：
+- 同じ話が繰り返されている
+- 相手が「特にないです」「そのくらいですかね」と言った
+- 十分な深さ（理由、エピソード、感情）が聞けた
+- 3回以上深掘りしても新しい情報が出ない
+
+## トピック移行の方法
+次のトピックに移る時は、回答の**末尾**に必ず \`[[NEXT]]\` を付けてください。
+例: 「なるほど、よく分かりました。では次に、〜についてお聞きしたいのですが...？[[NEXT]]」
+
+## 基本ルール
+1. **オウム返し禁止** - 「〜ということですね」「〜なんですね」は使わない
+2. **相槌から始める** - 「なるほど、」「へぇ〜、」「あぁ、」など（毎回違うものを）
+3. **すぐ質問** - 長い前置きなしで質問へ
+4. **必ず質問で終わる** - 発言の最後は質問形
+5. **終了禁止** - 終了する時以外は「終了します」と言わない
 `;
     }
 
