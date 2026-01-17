@@ -1065,6 +1065,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const listEl = document.getElementById('history-list');
             const detailEl = document.getElementById('history-detail');
             detailEl.style.display = 'none';
+            listEl.style.display = 'block';  // 履歴リストを表示
 
             try {
                 const db = await openDB();
