@@ -54,6 +54,14 @@
         .chat-user { background-color: #e3f2fd; }
         .chat-ai { background-color: #fff0ee; }
 
+        /* 設定情報表示 */
+        .settings-info { background: #f0f7ff; padding: 12px; border-radius: 8px; font-size: 0.9em; margin-bottom: 10px; }
+        .setting-row { margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .setting-label { font-weight: bold; color: #555; min-width: 70px; }
+        .setting-text { background: #fff; padding: 5px 8px; border-radius: 4px; font-size: 0.85em; color: #666; margin-top: 3px; width: 100%; white-space: pre-wrap; word-break: break-word; }
+        .btn-apply-settings { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 5px; }
+        .btn-apply-settings:hover { background: #0056b3; }
+
         @media (max-width: 900px) {
             .layout-container { grid-template-columns: 1fr; height: auto; overflow: auto; }
             body { height: auto; overflow: auto; }
@@ -381,7 +389,11 @@
         }
     }
 
+    // 現在選択中のレコードを保持
+    let selectedRecord = null;
+
     function showDetail(rec) {
+        selectedRecord = rec;
         const detailEl = document.getElementById('history-detail');
         const chatHtml = rec.history.map(h => {
             const role = h.role === 'assistant' ? '🤖 AI' : (h.role === 'user' ? '👤 User' : h.role);
@@ -390,17 +402,90 @@
             return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}</div><div>${text}</div></div>`;
         }).join('');
 
+        // 設定情報のHTML（設定が保存されている場合のみ表示）
+        let settingsHtml = '';
+        if (rec.settings) {
+            const s = rec.settings;
+            settingsHtml = `
+                <div class="detail-section-title">使用設定</div>
+                <div class="settings-info">
+                    <div class="setting-row"><span class="setting-label">モデル:</span> ${s.modelName || '不明'}</div>
+                    <div class="setting-row"><span class="setting-label">深さ:</span> ${s.depth === 'deep' ? '長く (5回)' : '標準 (3回)'}</div>
+                    <div class="setting-row"><span class="setting-label">音声:</span> ${s.voiceName || '不明'}</div>
+                    <div class="setting-row"><span class="setting-label">速度:</span> ${s.rate || '不明'}</div>
+                    ${s.context ? `<div class="setting-row"><span class="setting-label">事前知識:</span><div class="setting-text">${s.context.substring(0, 200)}${s.context.length > 200 ? '...' : ''}</div></div>` : ''}
+                    ${s.persona ? `<div class="setting-row"><span class="setting-label">AI人格:</span><div class="setting-text">${s.persona.substring(0, 200)}${s.persona.length > 200 ? '...' : ''}</div></div>` : ''}
+                </div>
+                <button onclick="applySettings()" class="btn-apply-settings">🔄 この設定をセット</button>
+            `;
+        }
+
         detailEl.innerHTML = `
             <div class="detail-header">
                 <div class="detail-title">${rec.title}</div>
                 <div class="detail-meta">日時: ${rec.date}</div>
             </div>
+            ${settingsHtml}
             <div class="detail-section-title">サマリー</div>
             <div class="detail-summary">${rec.summary}</div>
             <button onclick="navigator.clipboard.writeText(\`${rec.summary.replace(/`/g, '\\`')}\`)" style="margin-top:5px; padding:5px; font-size:0.8em; cursor:pointer;">📋 コピー</button>
             <div class="detail-section-title">会話ログ (${rec.history.length}ターン)</div>
             <div class="detail-chat">${chatHtml}</div>
         `;
+    }
+
+    function applySettings() {
+        if (!selectedRecord || !selectedRecord.settings) {
+            alert('この履歴には設定情報が保存されていません');
+            return;
+        }
+        const s = selectedRecord.settings;
+        const rec = selectedRecord;
+
+        // フォームに設定を反映
+        document.getElementById('title').value = rec.title || '';
+        document.getElementById('preContext').value = s.context || '';
+        document.getElementById('topics').value = rec.topics ? rec.topics.join('\n') : '';
+        document.getElementById('persona').value = s.persona || '';
+
+        // モデル選択
+        const modelSelect = document.getElementById('modelName');
+        if (s.modelName) {
+            for (let opt of modelSelect.options) {
+                if (opt.value === s.modelName) {
+                    opt.selected = true;
+                    break;
+                }
+            }
+        }
+
+        // 深さ
+        if (s.depth) {
+            const depthRadio = document.querySelector(`input[name="depth"][value="${s.depth}"]`);
+            if (depthRadio) depthRadio.checked = true;
+        }
+
+        // 音声（リストが読み込まれている場合）
+        const voiceSelect = document.getElementById('voiceName');
+        if (s.voiceName) {
+            for (let opt of voiceSelect.options) {
+                if (opt.value === s.voiceName) {
+                    opt.selected = true;
+                    break;
+                }
+            }
+        }
+
+        // 速度
+        if (s.rate) {
+            document.getElementById('rate').value = s.rate;
+            document.getElementById('rateVal').innerText = s.rate;
+        }
+
+        // 文字数カウント更新
+        validateCharCount();
+
+        alert('設定をセットしました！左のフォームを確認してください。');
     }
 
     loadHistory();

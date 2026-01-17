@@ -434,8 +434,21 @@ ${instruction}
             const tx = db.transaction(STORE_NAME, "readwrite");
             const store = tx.objectStore(STORE_NAME);
             const record = {
-                id: Date.now(), title: CONFIG.title, date: new Date().toLocaleString(),
-                topics: CONFIG.topics, history: conversationHistory, summary: summaryText
+                id: Date.now(),
+                title: CONFIG.title,
+                date: new Date().toLocaleString(),
+                topics: CONFIG.topics,
+                history: conversationHistory,
+                summary: summaryText,
+                // 設定情報も保存
+                settings: {
+                    modelName: CONFIG.modelName || "llama-3.3-70b-versatile",
+                    context: CONFIG.context || "",
+                    persona: CONFIG.persona || "",
+                    voiceName: CONFIG.voiceName || "",
+                    rate: CONFIG.rate || 1.3,
+                    depth: CONFIG.depth || "standard"
+                }
             };
             store.add(record);
         } catch (e) { console.error("DB Error:", e); }
