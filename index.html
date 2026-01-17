@@ -63,6 +63,9 @@
         .btn-apply-settings:hover { background: #0056b3; }
         .btn-delete { background: #dc3545; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-top: 8px; }
         .btn-delete:hover { background: #c82333; }
+        .btn-generate { background: #6f42c1; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75em; }
+        .btn-generate:hover { background: #5a32a3; }
+        .btn-generate:disabled { background: #aaa; cursor: not-allowed; }
 
         @media (max-width: 900px) {
             .layout-container { grid-template-columns: 1fr; height: auto; overflow: auto; }
@@ -120,8 +123,12 @@
             </div>
 
             <div class="form-group">
-                <label>聞きたいことリスト</label>
-                <textarea id="topics">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    聞きたいことリスト
+                    <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨ タイトルから生成</button>
+                    <span id="generate-status" style="font-size: 0.8em; color: #666;"></span>
+                </label>
+                <textarea id="topics" style="height: 180px;">
 1. 自己紹介
 2. 福岡未踏ではどんなアプリを開発していますか
 3. 福岡未踏に応募しようと思ったきっかけ
@@ -260,6 +267,83 @@
             help.style.display = 'block';
         } else {
             help.style.display = 'none';
+        }
+    }
+
+    // --- トピック自動生成 ---
+    async function generateTopics() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const title = document.getElementById('title').value.trim();
+        const persona = document.getElementById('persona').value.trim();
+        const modelName = document.getElementById('modelName').value;
+
+        if (!apiKey) {
+            alert('APIキーを入力してください');
+            return;
+        }
+        if (!title) {
+            alert('タイトルを入力してください');
+            return;
+        }
+
+        const btn = document.getElementById('generateBtn');
+        const statusEl = document.getElementById('generate-status');
+
+        btn.disabled = true;
+        statusEl.innerText = '生成中...';
+
+        const systemPrompt = `あなたは創造的なインタビュー企画者です。
+与えられたインタビュータイトルから、興味深い質問トピックを10個生成してください。
+
+以下のインタビュアーの人格を参考にしてください：
+${persona}
+
+ルール：
+- 基本的な質問から始め、徐々に深い質問へ
+- タイトルから直接連想される質問だけでなく、創造的・意外性のある質問も含める
+- 相手の経験、感情、考え、将来の展望など多角的な視点から
+- 各トピックは簡潔に（1行で）
+- 番号付きリストで出力（1. 2. 3. ...）
+- 余計な説明は不要、リストのみ出力`;
+
+        const userPrompt = `インタビュータイトル：「${title}」\n\nこのインタビューで聞くべき質問トピックを10個、創造的に生成してください。`;
+
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.9,
+                    max_tokens: 1024
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || response.statusText);
+            }
+
+            const data = await response.json();
+            const generatedText = data.choices[0].message.content;
+
+            document.getElementById('topics').value = generatedText;
+            statusEl.innerText = '✅ 生成完了';
+            setTimeout(() => { statusEl.innerText = ''; }, 2000);
+
+        } catch (e) {
+            console.error('Generate Error:', e);
+            statusEl.innerText = '❌ エラー';
+            alert('生成に失敗しました: ' + e.message);
+        } finally {
+            btn.disabled = false;
         }
     }
 
