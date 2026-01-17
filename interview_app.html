@@ -75,6 +75,7 @@
         #skip-btn:hover { background-color: #5a6268; }
 
         .copy-btn { width: 100%; padding: 10px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .copy-btn:disabled, .btn-back:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.7; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
@@ -97,7 +98,7 @@
         <div class="summary-section" id="summary-section">
             <div class="summary-title">📝 インタビュー結果サマリー</div>
             <div id="summary-box">ここに結果が表示されます...</div>
-            <button class="copy-btn" onclick="copySummary()">📋 サマリーをコピー</button>
+            <button id="copy-btn" class="copy-btn" onclick="copySummary()" disabled>📋 サマリーをコピー</button>
         </div>
     </div>
 
@@ -116,7 +117,7 @@
         </div>
 
         <div id="ctrl-finished" style="display:none;">
-            <button class="btn btn-back" onclick="window.location.href='index.html'">設定画面に戻る</button>
+            <button id="back-btn" class="btn btn-back" onclick="window.location.href='index.html'" disabled>設定画面に戻る</button>
         </div>
     </div>
 </div>
@@ -447,11 +448,17 @@ ${situationInstruction}
             const summaryText = await callGroqAPI([{ role: "user", content: prompt }], "あなたは優秀なライターです。", 0.7, 4096);
             summaryBox.innerText = summaryText;
             updateStatus('idle', '完了');
-            setButtonState("FINISHED"); 
+            setButtonState("FINISHED");
+            // サマリー完了後にボタンを有効化
+            document.getElementById('copy-btn').disabled = false;
+            document.getElementById('back-btn').disabled = false;
             await saveToDB(summaryText);
         } catch (error) {
             summaryBox.innerHTML = `<span style="color:red;">${error.message}</span>`;
             updateStatus('error', 'エラー');
+            // エラー時も戻るボタンは有効化
+            document.getElementById('back-btn').disabled = false;
+            setButtonState("FINISHED");
         }
     }
 
