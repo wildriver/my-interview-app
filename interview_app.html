@@ -122,7 +122,6 @@
 </div>
 
 <script>
-    const FILLERS = ["なるほど", "なるほどぉ", "なーるほど", "なぁーるほど", "なるほどですねぇ", "ふむふむ", "ふぅむふむ", "ふむふむふむ"];
     const DB_NAME = "InterviewDB";
     const DB_VERSION = 1;
     const STORE_NAME = "archives";
@@ -348,9 +347,10 @@ ${instruction}
 
 # Strict Rules
 1. **回答者の発言をオウム返ししたり、要約したりしないでください。** （「〜ということですね」「〜なんですね」は禁止）
-2. **前置きなしで、すぐに質問を投げかけてください。**
-3. 発言の最後は必ず**質問**で終わってください。
-4. 終了する時以外は、「終了します」と言わないでください。
+2. **回答に対して、まず短い自然な相槌で始めてください。** 例: 「なるほど、」「へぇ〜、」「あぁ、」「おお、」「そうなんですね、」など。ただし毎回同じ相槌にならないよう、バリエーションをつけてください。
+3. 相槌の後は、長い前置きなしで**すぐに質問を投げかけてください。**
+4. 発言の最後は必ず**質問**で終わってください。
+5. 終了する時以外は、「終了します」と言わないでください。
 `;
     }
 
@@ -465,8 +465,7 @@ ${instruction}
             if (!transcript) return;
             if (isInterviewerSpeaking || isThinking) return;
             addMessage('user', transcript);
-            if (Math.random() <= CONFIG.fillerFreq) playFiller();
-            processUserResponse(transcript); 
+            processUserResponse(transcript);
         };
         recognition.onend = () => { toggleVisualizer(false); };
         recognition.onerror = (event) => {
@@ -479,14 +478,6 @@ ${instruction}
                 console.error('音声認識エラー:', event.error);
             }
         };
-    }
-
-    function playFiller() {
-        const text = FILLERS[Math.floor(Math.random() * FILLERS.length)];
-        const utterance = new SpeechSynthesisUtterance(text);
-        configureUtterance(utterance); 
-        utterance.rate = 0.8; utterance.pitch = 0.9; utterance.volume = 0.5; 
-        isInterviewerSpeaking = true; synth.speak(utterance); 
     }
 
     function speak(text, onComplete = null) {

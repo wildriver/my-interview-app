@@ -144,15 +144,6 @@
             </div>
 
             <div class="form-group">
-                <label>相槌頻度</label>
-                <select id="fillerFreq">
-                    <option value="0.5">普通 (2回に1回)</option>
-                    <option value="0.0">なし</option>
-                    <option value="1.0" selected>多い (毎回)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label>AI人格</label>
                 <textarea id="persona" style="height: 60px;">Act as a master interviewer with insatiable curiosity. Ask one open-ended, engaging question at a time to dig deep into my stories and perspectives. Always build on my previous answer to keep the conversation flowing. Please must reply in Japanese.</textarea>
             </div>
@@ -286,7 +277,6 @@
             rate: parseFloat(document.getElementById('rate').value),
             pitch: 1.0,
             volume: 1.0,
-            fillerFreq: parseFloat(document.getElementById('fillerFreq').value),
             persona: document.getElementById('persona').value
         };
 
