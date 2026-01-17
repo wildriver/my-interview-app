@@ -456,6 +456,94 @@
             color: #666;
         }
 
+        /* プロンプト表示ボタン */
+        .btn-show-prompt {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+        .btn-show-prompt:hover {
+            background: #5a6268;
+        }
+
+        /* プロンプト表示モーダル */
+        .prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .prompt-modal.active {
+            display: flex;
+        }
+        .prompt-modal-content {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85em;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+        .prompt-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .prompt-modal-title {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .prompt-modal-close {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .prompt-section {
+            margin-bottom: 15px;
+        }
+        .prompt-section-title {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        .prompt-content {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #7fdbff;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .prompt-content.response {
+            color: #98fb98;
+        }
+        .prompt-messages {
+            color: #ff6b6b;
+        }
+
         @media (max-width: 900px) {
             .layout-container {
                 grid-template-columns: 1fr;
@@ -476,6 +564,17 @@
 </head>
 
 <body>
+
+    <!-- プロンプト表示モーダル -->
+    <div id="prompt-modal" class="prompt-modal" onclick="closePromptModal(event)">
+        <div class="prompt-modal-content" onclick="event.stopPropagation()">
+            <div class="prompt-modal-header">
+                <span class="prompt-modal-title">🐛 プロンプト詳細</span>
+                <button class="prompt-modal-close" onclick="closePromptModal()">閉じる</button>
+            </div>
+            <div id="prompt-modal-body"></div>
+        </div>
+    </div>
 
     <div class="layout-container">
 
@@ -1007,11 +1106,27 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             listEl.style.display = 'none';
             detailEl.style.display = 'block';
 
-            const chatHtml = rec.history.map(h => {
+            // AIの発言インデックスを追跡
+            let aiResponseIndex = 0;
+
+            const chatHtml = rec.history.map((h, idx) => {
                 const role = h.role === 'assistant' ? '🤖 AI' : (h.role === 'user' ? '👤 User' : h.role);
                 const roleClass = h.role === 'assistant' ? 'chat-ai' : 'chat-user';
                 const text = h.content;
-                return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}</div><div>${text}</div></div>`;
+
+                // AIの発言の場合、プロンプト表示ボタンを追加
+                let promptBtn = '';
+                if (h.role === 'assistant' && rec.promptLog && rec.promptLog.length > 0) {
+                    // このAI発言に対応するプロンプトログを探す
+                    const logEntry = rec.promptLog.find(log => log.aiResponseIndex === aiResponseIndex);
+                    if (logEntry) {
+                        const logIndex = rec.promptLog.indexOf(logEntry);
+                        promptBtn = `<button class="btn-show-prompt" onclick="showPromptDetail(${logIndex})">🐛 プロンプト</button>`;
+                    }
+                    aiResponseIndex++;
+                }
+
+                return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}${promptBtn}</div><div>${text}</div></div>`;
             }).join('');
 
             // 設定情報のHTML（設定が保存されている場合のみ表示）
@@ -1145,6 +1260,67 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         }
 
         loadHistory();
+
+        // プロンプト表示モーダル関連
+        function showPromptDetail(logIndex) {
+            if (!selectedRecord || !selectedRecord.promptLog || !selectedRecord.promptLog[logIndex]) {
+                alert('プロンプト情報が見つかりません');
+                return;
+            }
+
+            const log = selectedRecord.promptLog[logIndex];
+            const modal = document.getElementById('prompt-modal');
+            const body = document.getElementById('prompt-modal-body');
+
+            // 送信したメッセージ履歴を整形
+            const messagesHtml = log.messages
+                .filter(m => m.role !== 'system')
+                .map(m => `<div style="margin-bottom: 5px;"><strong style="color: ${m.role === 'user' ? '#ff6b6b' : '#98fb98'};">${m.role}:</strong> ${escapeHtml(m.content.substring(0, 200))}${m.content.length > 200 ? '...' : ''}</div>`)
+                .join('');
+
+            body.innerHTML = `
+                <div class="prompt-section">
+                    <div class="prompt-section-title">📅 タイムスタンプ: ${log.timestamp}</div>
+                </div>
+                <div class="prompt-section">
+                    <div class="prompt-section-title">📡 ステータス: ${log.status}</div>
+                </div>
+                <div class="prompt-section">
+                    <div class="prompt-section-title">📜 System Prompt:</div>
+                    <div class="prompt-content">${escapeHtml(log.systemPrompt)}</div>
+                </div>
+                <div class="prompt-section">
+                    <div class="prompt-section-title">💬 送信した会話履歴 (${log.messages.filter(m => m.role !== 'system').length}メッセージ):</div>
+                    <div class="prompt-content prompt-messages">${messagesHtml || '(なし)'}</div>
+                </div>
+                ${log.response ? `
+                <div class="prompt-section">
+                    <div class="prompt-section-title">🤖 AIの応答:</div>
+                    <div class="prompt-content response">${escapeHtml(log.response)}</div>
+                </div>
+                ` : ''}
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closePromptModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('prompt-modal').classList.remove('active');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ESCキーでモーダルを閉じる
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePromptModal();
+            }
+        });
     </script>
 
 </body>

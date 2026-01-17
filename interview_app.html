@@ -78,6 +78,75 @@
         .copy-btn:disabled, .btn-back:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.7; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* デバッグモード */
+        .debug-toggle-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .debug-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #666;
+            cursor: pointer;
+        }
+        .debug-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+        .debug-box {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.8em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-box.active { display: block; }
+        .debug-entry {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+        }
+        .debug-entry:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .debug-timestamp {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .debug-status {
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .debug-prompt {
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #7fdbff;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 8px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .debug-history {
+            color: #ff6b6b;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +189,17 @@
             <button id="back-btn" class="btn btn-back" onclick="window.location.href='index.html'" disabled>設定画面に戻る</button>
         </div>
     </div>
+
+    <!-- デバッグモード -->
+    <div class="debug-toggle-container">
+        <label class="debug-toggle">
+            <input type="checkbox" id="debug-mode-toggle" onchange="toggleDebugMode()">
+            <span>🐛 Debug Mode</span>
+        </label>
+    </div>
+    <div id="debug-box" class="debug-box">
+        <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
+    </div>
 </div>
 
 <script>
@@ -139,7 +219,11 @@
     let timerInterval;
     let startTime;
 
-    let currentTopicIndex = 0; 
+    let currentTopicIndex = 0;
+
+    // デバッグモード関連
+    let debugMode = false;
+    let promptLog = [];  // 各APIコールのプロンプト情報を記録 
 
     window.speechSynthesis.onvoiceschanged = () => { availableVoices = window.speechSynthesis.getVoices(); };
 
@@ -227,13 +311,15 @@
 
     async function startInterview() {
         if (!CONFIG.apiKey) return alert("APIキーが設定されていません");
-        
+
         conversationHistory = [];
         currentTopicIndex = 0;
+        promptLog = [];  // デバッグ用プロンプト履歴をリセット
 
-        document.getElementById('chat-log').innerHTML = ''; 
-        document.getElementById('summary-section').style.display = 'none'; 
+        document.getElementById('chat-log').innerHTML = '';
+        document.getElementById('summary-section').style.display = 'none';
         document.getElementById('summary-box').innerText = '...';
+        document.getElementById('debug-box').innerHTML = '<div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>';
 
         await initAudioContext();
         setButtonState("RUNNING");
@@ -395,9 +481,9 @@ ${situationInstruction}
     }
 
     // --- API Call (Token optimization) ---
-    async function callGroqAPI(history, systemPrompt, customTemp = 0.7, customMaxTokens = 1024) {
+    async function callGroqAPI(history, systemPrompt, customTemp = 0.7, customMaxTokens = 1024, callType = 'interview') {
         const url = "https://api.groq.com/openai/v1/chat/completions";
-        
+
         // ★トークン節約ロジック: 履歴は直近の10件（5往復）のみ送信する
         const MAX_HISTORY = 10;
         const recentHistory = history.length > MAX_HISTORY ? history.slice(-MAX_HISTORY) : history;
@@ -407,9 +493,12 @@ ${situationInstruction}
         const payload = {
             model: CONFIG.modelName || "llama-3.1-8b-instant",
             messages: messages,
-            temperature: customTemp, 
+            temperature: customTemp,
             max_tokens: customMaxTokens
         };
+
+        // デバッグ: リクエスト送信前に記録
+        addDebugEntry(`${callType} - Sending Request`, systemPrompt, messages);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -430,7 +519,15 @@ ${situationInstruction}
         }
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        const responseText = data.choices[0].message.content;
+
+        // デバッグ: レスポンス受信後に記録を更新
+        if (promptLog.length > 0) {
+            promptLog[promptLog.length - 1].response = responseText;
+            promptLog[promptLog.length - 1].status = `${callType} - Response Received`;
+        }
+
+        return responseText;
     }
 
     async function generateSummary() {
@@ -445,7 +542,7 @@ ${situationInstruction}
         try {
             // サマリー生成時は履歴を送らず、テキスト化して送る（これは変えない）
             // Summary時はトークン消費が多いが1回だけなので許容する。
-            const summaryText = await callGroqAPI([{ role: "user", content: prompt }], "あなたは優秀なライターです。", 0.7, 4096);
+            const summaryText = await callGroqAPI([{ role: "user", content: prompt }], "あなたは優秀なライターです。", 0.7, 4096, 'summary');
             summaryBox.innerText = summaryText;
             updateStatus('idle', '完了');
             setButtonState("FINISHED");
@@ -486,6 +583,8 @@ ${situationInstruction}
                 topics: CONFIG.topics,
                 history: conversationHistory,
                 summary: summaryText,
+                // プロンプト履歴を保存（デバッグ用）
+                promptLog: promptLog,
                 // 設定情報も保存
                 settings: {
                     modelName: CONFIG.modelName || "llama-3.1-8b-instant",
@@ -605,6 +704,63 @@ ${situationInstruction}
         const log = document.getElementById('chat-log'); const div = document.createElement('div');
         div.className = `message role-${role}`; div.innerHTML = (role === 'ai' ? '🤖 ' : '👤 ') + text;
         log.appendChild(div); log.scrollTop = log.scrollHeight;
+    }
+
+    // デバッグモード関連の関数
+    function toggleDebugMode() {
+        debugMode = document.getElementById('debug-mode-toggle').checked;
+        const debugBox = document.getElementById('debug-box');
+        debugBox.classList.toggle('active', debugMode);
+    }
+
+    function addDebugEntry(status, systemPrompt, messages, response = null) {
+        const timestamp = new Date().toLocaleTimeString();
+        const historyCount = messages.filter(m => m.role !== 'system').length;
+
+        // promptLogに記録（AIの応答インデックスと紐付け）
+        const logEntry = {
+            timestamp: timestamp,
+            status: status,
+            systemPrompt: systemPrompt,
+            messages: JSON.parse(JSON.stringify(messages)), // ディープコピー
+            response: response,
+            aiResponseIndex: conversationHistory.filter(h => h.role === 'assistant').length
+        };
+        promptLog.push(logEntry);
+
+        // デバッグモードがONの場合のみ画面に表示
+        if (!debugMode) return;
+
+        const debugBox = document.getElementById('debug-box');
+        const entry = document.createElement('div');
+        entry.className = 'debug-entry';
+
+        // プロンプトを短縮表示（最初の500文字）
+        const shortPrompt = systemPrompt.length > 500
+            ? systemPrompt.substring(0, 500) + '...(truncated)'
+            : systemPrompt;
+
+        entry.innerHTML = `
+            <div class="debug-timestamp">${timestamp}</div>
+            <div class="debug-status">📡 ${status}</div>
+            <div class="debug-history">📜 履歴: ${historyCount}メッセージ送信</div>
+            <div style="color: #aaa; margin-top: 4px;">System Prompt:</div>
+            <div class="debug-prompt">${escapeHtml(shortPrompt)}</div>
+            ${response ? `<div style="color: #aaa; margin-top: 8px;">Response:</div><div class="debug-prompt" style="color: #98fb98;">${escapeHtml(response.substring(0, 300))}${response.length > 300 ? '...' : ''}</div>` : ''}
+        `;
+
+        debugBox.insertBefore(entry, debugBox.firstChild);
+
+        // 最大10件までに制限
+        while (debugBox.children.length > 10) {
+            debugBox.removeChild(debugBox.lastChild);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 </script>
 
