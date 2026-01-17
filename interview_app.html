@@ -365,7 +365,7 @@ ${instruction}
         const messages = [{ role: "system", content: systemPrompt }, ...recentHistory];
 
         const payload = {
-            model: "llama-3.3-70b-versatile",
+            model: CONFIG.modelName || "llama-3.3-70b-versatile",
             messages: messages,
             temperature: customTemp, 
             max_tokens: customMaxTokens

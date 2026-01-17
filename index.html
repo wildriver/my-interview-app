@@ -74,6 +74,19 @@
             </div>
 
             <div class="form-group">
+                <label>モデル</label>
+                <select id="modelName">
+                    <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B (推奨)</option>
+                    <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B (高速)</option>
+                    <option value="llama3-70b-8192">Llama 3 70B</option>
+                    <option value="llama3-8b-8192">Llama 3 8B</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                    <option value="gemma2-9b-it">Gemma 2 9B</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label>タイトル</label>
                 <input type="text" id="title" value="福岡未踏に関するインタビュー">
             </div>
@@ -248,6 +261,7 @@
 
         const config = {
             apiKey: apiKey,
+            modelName: document.getElementById('modelName').value,
             title: document.getElementById('title').value,
             // ★ 事前知識を保存
             context: document.getElementById('preContext').value,
