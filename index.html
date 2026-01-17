@@ -673,8 +673,8 @@
                 <div class="section-title">📝 インタビュー内容</div>
 
                 <div class="form-group">
-                    <label>タイトル</label>
-                    <input type="text" id="title" placeholder="アプリ開発に関するインタビュー">
+                    <label>タイトル <span style="color: #dc3545;">*</span></label>
+                    <input type="text" id="title" placeholder="アプリ開発に関するインタビュー" oninput="validateTitle()">
                 </div>
 
                 <div class="form-group">
@@ -799,6 +799,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 
         let isApiValid = false;
         let isCharValid = true;
+        let isTitleValid = false;
         const MAX_CHARS = 3000;
 
         const DB_NAME = "InterviewDB";
@@ -820,6 +821,13 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 counterEl.classList.remove('char-over');
                 isCharValid = true;
             }
+            updateStartButton();
+        }
+
+        // --- タイトルバリデーション ---
+        function validateTitle() {
+            const title = document.getElementById('title').value.trim();
+            isTitleValid = title.length > 0;
             updateStartButton();
         }
 
@@ -864,13 +872,16 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const btn = document.getElementById('startBtn');
             const help = document.getElementById('start-help');
 
-            // APIキーが有効かつ、文字数制限内であれば押せる
-            const ready = isApiValid && isCharValid;
+            // APIキーが有効、タイトルが入力済み、文字数制限内であれば押せる
+            const ready = isApiValid && isTitleValid && isCharValid;
 
             btn.disabled = !ready;
 
             if (!isApiValid) {
                 help.innerText = "※有効なAPIキーを入力してください";
+                help.style.display = 'block';
+            } else if (!isTitleValid) {
+                help.innerText = "※インタビュータイトルを入力してください";
                 help.style.display = 'block';
             } else if (!isCharValid) {
                 help.innerText = "※事前知識の文字数が上限を超えています";
@@ -1253,8 +1264,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 document.getElementById('rateVal').innerText = s.rate;
             }
 
-            // 文字数カウント更新
+            // バリデーション更新
             validateCharCount();
+            validateTitle();
 
             alert('設定をセットしました！左のフォームを確認してください。');
         }
