@@ -15,7 +15,7 @@ Groq APIの圧倒的な推論速度と、ブラウザ標準のWeb Speech APIを�
 
 ## デモ
 
-**[デモアプリを開く](https://yutaka-arakawa.github.io/my-interview-ai/)**
+**[デモアプリを開く](https://wildriver.github.io/my-interview-app/index.html)**
 
 > **注意**: ブラウザの音声認識機能 (`webkitSpeechRecognition`) を使用するため、**Google Chrome** でアクセスしてください。
 
@@ -128,4 +128,4 @@ my-interview-app/
 
 ## ライセンス
 
-MIT License
+Apache
