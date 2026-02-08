@@ -263,7 +263,7 @@
     <div id="debug-box" class="debug-box">
         <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
     </div>
-    <div class="build-version">Build: 2026-02-09 09:00</div>
+    <div class="build-version">Build: 2026-02-09 09:30</div>
 </div>
 
 <script>
@@ -301,7 +301,8 @@
         }
 
         document.getElementById('page-title').innerText = CONFIG.title;
-        document.getElementById('page-topics').innerText = "聞きたいこと: " + CONFIG.topics.length + "項目";
+        const sttLabel = (CONFIG.sttMode === 'webspeech') ? 'Web Speech API' : 'Groq Whisper';
+        document.getElementById('page-topics').innerText = "聞きたいこと: " + CONFIG.topics.length + "項目 | 音声認識: " + sttLabel;
 
         setupVisualizerCanvas();
         setButtonState("IDLE");
@@ -386,6 +387,7 @@
         currentTopicIndex = 0;
         promptLog = [];
         consecutiveSilenceCount = 0;
+        sttMode = CONFIG.sttMode || 'groq';
 
         document.getElementById('chat-log').innerHTML = '';
         document.getElementById('summary-section').style.display = 'none';
@@ -689,7 +691,8 @@ ${situationInstruction}
                     persona: CONFIG.persona || "",
                     voiceName: CONFIG.voiceName || "",
                     rate: CONFIG.rate || 1.3,
-                    depth: CONFIG.depth || "standard"
+                    depth: CONFIG.depth || "standard",
+                    sttMode: CONFIG.sttMode || "groq"
                 }
             };
             store.add(record);
@@ -710,8 +713,10 @@ ${situationInstruction}
         if (selectedVoice) utterance.voice = selectedVoice;
     }
     
-    // --- Groq Whisper STT ---
+    // --- STT Engine (Groq Whisper / Web Speech API) ---
 
+    let sttMode = 'groq'; // 'groq' or 'webspeech' — set from CONFIG
+    let recognition = null; // Web Speech API instance
     let mediaRecorder = null;
     let audioChunks = [];
     let audioStream = null;
@@ -761,7 +766,16 @@ ${situationInstruction}
     }
 
     function startListening() {
-        if (isListening || !audioStream || !interviewRunning) return;
+        if (isListening || !interviewRunning) return;
+        if (sttMode === 'webspeech') {
+            startListeningWebSpeech();
+        } else {
+            startListeningGroq();
+        }
+    }
+
+    function startListeningGroq() {
+        if (isListening || !audioStream) return;
         isListening = true;
         audioChunks = [];
         speechDetected = false;
@@ -771,7 +785,7 @@ ${situationInstruction}
         updateStatus('listening', '聞いています...');
         toggleVisualizer(true);
         document.getElementById('reply-btn').style.display = 'inline-block';
-        console.log('[STT] startListening');
+        console.log('[STT] startListeningGroq');
 
         const mimeType = getRecorderMimeType();
         const options = mimeType ? { mimeType } : {};
@@ -844,6 +858,14 @@ ${situationInstruction}
     }
 
     function stopListening() {
+        if (sttMode === 'webspeech') {
+            stopListeningWebSpeech();
+        } else {
+            stopListeningGroq();
+        }
+    }
+
+    function stopListeningGroq() {
         isListening = false;
         if (silenceCheckInterval) {
             clearInterval(silenceCheckInterval);
@@ -854,7 +876,107 @@ ${situationInstruction}
         }
         toggleVisualizer(false);
         document.getElementById('reply-btn').style.display = 'none';
-        console.log('[STT] stopListening');
+        console.log('[STT] stopListeningGroq');
+    }
+
+    // --- Web Speech API ---
+
+    function startListeningWebSpeech() {
+        if (isListening) return;
+        isListening = true;
+
+        updateStatus('listening', '聞いています...');
+        toggleVisualizer(true);
+        document.getElementById('reply-btn').style.display = 'inline-block';
+        console.log('[STT] startListeningWebSpeech');
+
+        if (!recognition) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                updateStatus('error', 'Web Speech APIがこのブラウザでサポートされていません');
+                isListening = false;
+                return;
+            }
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+        }
+
+        recognition.onresult = (event) => {
+            const text = event.results[event.results.length - 1][0].transcript;
+            console.log('[STT] Web Speech result:', text);
+            isListening = false;
+            toggleVisualizer(false);
+
+            if (isHallucination(text)) {
+                consecutiveSilenceCount++;
+                if (consecutiveSilenceCount >= MAX_SILENCE_ROUNDS) {
+                    handleSilenceTimeout();
+                    return;
+                }
+                if (!isInterviewerSpeaking && !isThinking) startListening();
+                return;
+            }
+
+            consecutiveSilenceCount = 0;
+            if (text && text.trim() && !isInterviewerSpeaking && !isThinking) {
+                addMessage('user', text.trim());
+                processUserResponse(text.trim());
+            } else {
+                startListening();
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('[STT] Web Speech error:', event.error);
+            isListening = false;
+
+            if (event.error === 'no-speech') {
+                consecutiveSilenceCount++;
+                if (consecutiveSilenceCount >= MAX_SILENCE_ROUNDS) {
+                    handleSilenceTimeout();
+                    return;
+                }
+                if (interviewRunning && !isInterviewerSpeaking && !isThinking) {
+                    setTimeout(() => startListening(), 300);
+                }
+                return;
+            }
+
+            if (event.error === 'network') {
+                updateStatus('error', 'ネットワークエラー。設定画面でGroq Whisperへの切り替えを推奨します。');
+                return;
+            }
+
+            if (event.error === 'aborted' || event.error === 'not-allowed') return;
+
+            updateStatus('error', '音声認識エラー: ' + event.error);
+            if (interviewRunning) setTimeout(() => startListening(), 1000);
+        };
+
+        recognition.onend = () => {
+            if (isListening && interviewRunning && !isInterviewerSpeaking && !isThinking) {
+                try { recognition.start(); } catch(e) { isListening = false; }
+            }
+        };
+
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('[STT] Web Speech start error:', e);
+            isListening = false;
+        }
+    }
+
+    function stopListeningWebSpeech() {
+        isListening = false;
+        if (recognition) {
+            try { recognition.stop(); } catch(e) {}
+        }
+        toggleVisualizer(false);
+        document.getElementById('reply-btn').style.display = 'none';
+        console.log('[STT] stopListeningWebSpeech');
     }
 
     function startSilenceDetection() {
@@ -954,19 +1076,22 @@ ${situationInstruction}
     async function forceReply() {
         if (!isListening && !isInterviewerSpeaking && !isThinking) return;
         console.log('[UI] forceReply called');
-        forceReplyMode = true;
 
-        // 聴講中なら録音を停止して、録音済み音声をtranscribeする
         if (isListening) {
-            // stopListeningでmediaRecorder.onstopが発火し、通常フローで処理される
-            // ただし speechDetected=false の場合はリスタートされてしまうので
-            // forceReplyMode フラグで制御
+            if (sttMode === 'webspeech') {
+                // Web Speech API: 停止して直接AIに依頼
+                stopListening();
+                addMessage('user', '(続けてください)');
+                processUserResponse('続けてください');
+                return;
+            }
+            // Groq mode: forceReplyModeフラグでonstopハンドラに制御を委譲
+            forceReplyMode = true;
             stopListening();
-            return; // onstopハンドラ内で処理される
+            return;
         }
 
         // 聴講中でなければ直接AIに続行を依頼
-        forceReplyMode = false;
         addMessage('user', '(続けてください)');
         processUserResponse('続けてください');
     }

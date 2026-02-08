@@ -690,6 +690,15 @@
                         テスト再生</button>
                 </div>
 
+                <div class="form-group">
+                    <label>音声認識エンジン</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="sttMode" value="groq" checked> Groq Whisper (高精度)</label>
+                        <label><input type="radio" name="sttMode" value="webspeech"> Web Speech API (ブラウザ内蔵)</label>
+                    </div>
+                    <p class="help-text" id="stt-help">Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span></p>
+                </div>
+
                 <!-- ===== インタビュー内容の設定 ===== -->
                 <div class="section-title">📝 インタビュー内容</div>
 
@@ -1014,7 +1023,8 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 pitch: 1.0,
                 volume: 1.0,
                 personaType: getSelectedPersonaType(),
-                persona: getSelectedPersonaPrompt()
+                persona: getSelectedPersonaPrompt(),
+                sttMode: document.querySelector('input[name="sttMode"]:checked').value
             };
 
             localStorage.setItem('interviewConfig', JSON.stringify(config));
@@ -1053,6 +1063,35 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 document.getElementById('apiKey').value = savedKey;
                 document.getElementById('saveApiKey').checked = true;
                 validateApi();
+            }
+        })();
+
+        // STTモード切替時のヘルプ表示
+        document.querySelectorAll('input[name="sttMode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const help = document.getElementById('stt-help');
+                if (this.value === 'groq') {
+                    help.innerHTML = 'Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span>';
+                } else {
+                    help.innerHTML = 'Web Speech API: ブラウザ内蔵の音声認識。無料ですが、ネットワーク接続が必要です（Chrome/Edge）。';
+                }
+            });
+        });
+
+        // 保存されたSTTモードを復元
+        (function loadSavedSttMode() {
+            const saved = localStorage.getItem('interviewConfig');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    if (config.sttMode) {
+                        const radio = document.querySelector(`input[name="sttMode"][value="${config.sttMode}"]`);
+                        if (radio) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change'));
+                        }
+                    }
+                } catch(e) {}
             }
         })();
 
