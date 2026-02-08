@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Interviewer (Running - v12)</title>
+    <title>AI Interviewer (2026-02-09)</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; position: relative; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -65,14 +65,43 @@
         }
         .running-controls button { flex: 1; }
 
-        /* スキップボタン */
-        #skip-btn-container { text-align: center; margin-bottom: 15px; height: 40px; }
-        #skip-btn {
-            background-color: #6c757d; color: white; border: none; 
+        /* スキップ・返信ボタン */
+        #skip-btn-container { text-align: center; margin-bottom: 15px; min-height: 40px; display: flex; justify-content: center; gap: 10px; }
+        #skip-btn, #reply-btn {
+            background-color: #6c757d; color: white; border: none;
             padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 0.9em;
             cursor: pointer; display: none;
         }
         #skip-btn:hover { background-color: #5a6268; }
+        #reply-btn { background-color: #e67e22; }
+        #reply-btn:hover { background-color: #d35400; }
+
+        /* テキスト入力 */
+        .text-input-row {
+            display: flex; gap: 8px; max-width: 600px; margin: 0 auto 15px;
+        }
+        .text-input-row input {
+            flex: 1; padding: 10px 15px; border: 1px solid #ccc; border-radius: 25px;
+            font-size: 1em; outline: none; transition: border-color 0.2s;
+        }
+        .text-input-row input:focus { border-color: #007bff; }
+        .text-input-row button {
+            padding: 10px 20px; background-color: #007bff; color: white; border: none;
+            border-radius: 25px; font-weight: bold; font-size: 0.9em; cursor: pointer;
+            white-space: nowrap;
+        }
+        .text-input-row button:hover { background-color: #0056b3; }
+
+        /* 次の話題ボタン */
+        #next-topic-btn {
+            background-color: #3498db; color: white; border: none;
+            padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 0.9em;
+            cursor: pointer; display: inline-block;
+        }
+        #next-topic-btn:hover { background-color: #2980b9; }
+
+        /* ビルドバージョン */
+        .build-version { text-align: right; font-size: 0.75em; color: #aaa; margin-top: 10px; }
 
         .copy-btn { width: 100%; padding: 10px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; }
         .copy-btn:disabled, .btn-back:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.7; }
@@ -173,7 +202,15 @@
 
     <div class="controls">
         <div id="skip-btn-container">
-            <button id="skip-btn" onclick="skipSpeech()">⏩ 話すのをやめて聞く (Skip)</button>
+            <button id="skip-btn" onclick="skipSpeech()">⏩ Skip</button>
+            <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
+        </div>
+
+        <div id="text-input-container" style="display:none;">
+            <div class="text-input-row">
+                <input type="text" id="text-input" placeholder="テキストで入力..." onkeydown="if(event.key==='Enter')sendTextInput()">
+                <button onclick="sendTextInput()">送信</button>
+            </div>
         </div>
 
         <div id="ctrl-idle">
@@ -183,6 +220,10 @@
         <div id="ctrl-running" class="running-controls" style="display:none;">
             <button class="btn btn-abort" onclick="abortInterview()">中止する<br><span style="font-size:0.7em; font-weight:normal">(保存されません)</span></button>
             <button class="btn btn-finish" onclick="forceFinish()">終了する<br><span style="font-size:0.7em; font-weight:normal">(サマリー生成)</span></button>
+        </div>
+
+        <div id="ctrl-actions" style="display:none; text-align:center; margin-top:10px;">
+            <button id="next-topic-btn" onclick="requestNextTopic()">⏭ 次の話題へ</button>
         </div>
 
         <div id="ctrl-finished" style="display:none;">
@@ -200,6 +241,7 @@
     <div id="debug-box" class="debug-box">
         <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
     </div>
+    <div class="build-version">Build: 2026-02-09 00:15</div>
 </div>
 
 <script>
@@ -247,12 +289,17 @@
         document.getElementById('ctrl-idle').style.display = 'none';
         document.getElementById('ctrl-running').style.display = 'none';
         document.getElementById('ctrl-finished').style.display = 'none';
+        document.getElementById('ctrl-actions').style.display = 'none';
+        document.getElementById('text-input-container').style.display = 'none';
         document.getElementById('skip-btn').style.display = 'none';
+        document.getElementById('reply-btn').style.display = 'none';
 
         if (state === "IDLE") {
             document.getElementById('ctrl-idle').style.display = 'block';
         } else if (state === "RUNNING") {
             document.getElementById('ctrl-running').style.display = 'flex';
+            document.getElementById('ctrl-actions').style.display = 'block';
+            document.getElementById('text-input-container').style.display = 'block';
         } else if (state === "FINISHED") {
             document.getElementById('ctrl-finished').style.display = 'block';
         }
@@ -271,7 +318,9 @@
             stopTimer();
             stopRecognition();
             updateStatus('finishing', '終了処理中... サマリーを作成します');
-            document.getElementById('ctrl-running').style.display = 'none'; 
+            document.getElementById('ctrl-running').style.display = 'none';
+            document.getElementById('ctrl-actions').style.display = 'none';
+            document.getElementById('text-input-container').style.display = 'none';
             generateSummary();
         }
     }
@@ -688,6 +737,7 @@ ${situationInstruction}
 
         updateStatus('listening', '聞いています...');
         toggleVisualizer(true);
+        document.getElementById('reply-btn').style.display = 'inline-block';
         console.log('[STT] startListening');
 
         const mimeType = getRecorderMimeType();
@@ -699,8 +749,17 @@ ${situationInstruction}
         };
 
         mediaRecorder.onstop = async () => {
-            console.log('[STT] MediaRecorder stopped, chunks:', audioChunks.length);
+            console.log('[STT] MediaRecorder stopped, chunks:', audioChunks.length, 'forceReply:', forceReplyMode);
+            const wasForceReply = forceReplyMode;
+            forceReplyMode = false;
+
             if (audioChunks.length === 0 || !speechDetected) {
+                if (wasForceReply) {
+                    console.log('[STT] Force reply with no speech, sending continue');
+                    addMessage('user', '(続けてください)');
+                    processUserResponse('続けてください');
+                    return;
+                }
                 console.log('[STT] No speech detected, restarting...');
                 if (!isInterviewerSpeaking && !isThinking) {
                     startListening();
@@ -716,6 +775,9 @@ ${situationInstruction}
                 if (text && text.trim() && !isInterviewerSpeaking && !isThinking) {
                     addMessage('user', text.trim());
                     processUserResponse(text.trim());
+                } else if (wasForceReply) {
+                    addMessage('user', '(続けてください)');
+                    processUserResponse('続けてください');
                 } else {
                     startListening();
                 }
@@ -740,6 +802,7 @@ ${situationInstruction}
             try { mediaRecorder.stop(); } catch(e) {}
         }
         toggleVisualizer(false);
+        document.getElementById('reply-btn').style.display = 'none';
         console.log('[STT] stopListening');
     }
 
@@ -790,6 +853,49 @@ ${situationInstruction}
         return result.text;
     }
 
+    // --- ユーザー操作ボタン ---
+
+    let forceReplyMode = false;
+
+    async function forceReply() {
+        if (!isListening && !isInterviewerSpeaking && !isThinking) return;
+        console.log('[UI] forceReply called');
+        forceReplyMode = true;
+
+        // 聴講中なら録音を停止して、録音済み音声をtranscribeする
+        if (isListening) {
+            // stopListeningでmediaRecorder.onstopが発火し、通常フローで処理される
+            // ただし speechDetected=false の場合はリスタートされてしまうので
+            // forceReplyMode フラグで制御
+            stopListening();
+            return; // onstopハンドラ内で処理される
+        }
+
+        // 聴講中でなければ直接AIに続行を依頼
+        forceReplyMode = false;
+        addMessage('user', '(続けてください)');
+        processUserResponse('続けてください');
+    }
+
+    function sendTextInput() {
+        const input = document.getElementById('text-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+
+        console.log('[UI] sendTextInput:', text);
+        stopListening();
+        addMessage('user', text);
+        processUserResponse(text);
+    }
+
+    function requestNextTopic() {
+        console.log('[UI] requestNextTopic');
+        stopListening();
+        addMessage('user', '(次の話題へ)');
+        processUserResponse('次の話題に移ってください');
+    }
+
     function speak(text, onComplete = null) {
         const cleanText = cleanTextForSpeech(text);
         isInterviewerSpeaking = true;
@@ -798,6 +904,7 @@ ${situationInstruction}
 
         const skipBtn = document.getElementById('skip-btn');
         if (skipBtn) skipBtn.style.display = 'inline-block';
+        document.getElementById('reply-btn').style.display = 'none';
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         configureUtterance(utterance);
