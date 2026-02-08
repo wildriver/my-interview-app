@@ -241,7 +241,7 @@
     <div id="debug-box" class="debug-box">
         <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
     </div>
-    <div class="build-version">Build: 2026-02-09 00:15</div>
+    <div class="build-version">Build: 2026-02-09 00:30</div>
 </div>
 
 <script>
@@ -360,6 +360,7 @@
         conversationHistory = [];
         currentTopicIndex = 0;
         promptLog = [];
+        consecutiveSilenceCount = 0;
 
         document.getElementById('chat-log').innerHTML = '';
         document.getElementById('summary-section').style.display = 'none';
@@ -695,9 +696,36 @@ ${situationInstruction}
     let silenceStartTime = 0;
     let recordingStartTime = 0;
     let isListening = false;
+    let consecutiveSilenceCount = 0;
     const SILENCE_THRESHOLD = 5;
     const SILENCE_DURATION = 2000;
     const MAX_RECORD_DURATION = 30000;
+    const MAX_SILENCE_ROUNDS = 3;
+
+    function isHallucination(text) {
+        if (!text || !text.trim()) return true;
+        const t = text.trim();
+        // 3文字以下は無視
+        if (t.length <= 3) return true;
+        // 同じ文字の繰り返し（ねぇねぇねぇ...、ああああ...等）
+        // 2-4文字のパターンが全体の60%以上を占めたらハルシネーション
+        for (let len = 1; len <= 4; len++) {
+            const pat = t.substring(0, len);
+            const repeated = pat.repeat(Math.ceil(t.length / len)).substring(0, t.length);
+            const matchCount = [...t].filter((c, i) => c === repeated[i]).length;
+            if (matchCount / t.length > 0.6) {
+                console.log('[STT] Hallucination detected (repeat):', t.substring(0, 30));
+                return true;
+            }
+        }
+        // ユニーク文字が極端に少ない（全体の10%以下）
+        const unique = new Set(t.replace(/\s/g, '')).size;
+        if (unique <= 2 && t.length > 5) {
+            console.log('[STT] Hallucination detected (low unique):', t.substring(0, 30));
+            return true;
+        }
+        return false;
+    }
 
     async function initWhisper() {
         if (whisperReady) return;
@@ -755,12 +783,17 @@ ${situationInstruction}
 
             if (audioChunks.length === 0 || !speechDetected) {
                 if (wasForceReply) {
-                    console.log('[STT] Force reply with no speech, sending continue');
+                    consecutiveSilenceCount = 0;
                     addMessage('user', '(続けてください)');
                     processUserResponse('続けてください');
                     return;
                 }
-                console.log('[STT] No speech detected, restarting...');
+                consecutiveSilenceCount++;
+                console.log('[STT] No speech detected, silence count:', consecutiveSilenceCount);
+                if (consecutiveSilenceCount >= MAX_SILENCE_ROUNDS) {
+                    handleSilenceTimeout();
+                    return;
+                }
                 if (!isInterviewerSpeaking && !isThinking) {
                     startListening();
                 }
@@ -772,6 +805,19 @@ ${situationInstruction}
             try {
                 const text = await transcribeLocal(blob);
                 console.log('[STT] Transcribed:', text);
+                if (isHallucination(text)) {
+                    consecutiveSilenceCount++;
+                    console.log('[STT] Hallucination filtered, silence count:', consecutiveSilenceCount);
+                    if (consecutiveSilenceCount >= MAX_SILENCE_ROUNDS) {
+                        handleSilenceTimeout();
+                        return;
+                    }
+                    if (!isInterviewerSpeaking && !isThinking) {
+                        startListening();
+                    }
+                    return;
+                }
+                consecutiveSilenceCount = 0;
                 if (text && text.trim() && !isInterviewerSpeaking && !isThinking) {
                     addMessage('user', text.trim());
                     processUserResponse(text.trim());
@@ -851,6 +897,25 @@ ${situationInstruction}
             task: 'transcribe'
         });
         return result.text;
+    }
+
+    function handleSilenceTimeout() {
+        console.log('[STT] Silence timeout - asking user');
+        consecutiveSilenceCount = 0;
+        updateStatus('idle', '無音が続いています');
+        toggleVisualizer(false);
+        const msg = 'しばらく音声が検出されませんでした。インタビューを終了しますか？';
+        addMessage('ai', msg);
+        speak(msg, () => {
+            // 発話後、ユーザーの応答を待つ（startListeningは speak() の onend で呼ばれる）
+            // → speak の onComplete を指定しているので、自動的には startListening しない
+            // ユーザーが「返信して」やテキスト入力で応答するのを待つ
+            updateStatus('listening', '聞いています...');
+            toggleVisualizer(true);
+            document.getElementById('reply-btn').style.display = 'inline-block';
+            // 短い待機後にリスニング開始
+            setTimeout(() => startListening(), 500);
+        });
     }
 
     // --- ユーザー操作ボタン ---
