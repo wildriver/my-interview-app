@@ -207,14 +207,26 @@
     const DB_VERSION = 1;
     const STORE_NAME = "archives";
 
-    let CONFIG = {}; 
-    let recognition;
-    let isInterviewerSpeaking = false; 
-    let isThinking = false; 
-    let conversationHistory = [];      
+    let CONFIG = {};
+    let isInterviewerSpeaking = false;
+    let isThinking = false;
+    let conversationHistory = [];
     let synth = window.speechSynthesis;
     let audioContext, analyser, dataArray, canvasCtx, visualizerFrame;
     let availableVoices = [];
+
+    // Whisper STT 関連
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioStream = null;
+    let silenceCheckInterval = null;
+    let speechDetected = false;
+    let silenceStartTime = 0;
+    let recordingStartTime = 0;
+    let isListening = false;
+    const SILENCE_THRESHOLD = 5;
+    const SILENCE_DURATION = 2000;
+    const MAX_RECORD_DURATION = 30000;
     
     let timerInterval;
     let startTime;
@@ -240,7 +252,6 @@
         document.getElementById('page-title').innerText = CONFIG.title;
         document.getElementById('page-topics').innerText = "聞きたいこと: " + CONFIG.topics.length + "項目";
 
-        setupRecognition();
         setupVisualizerCanvas();
         setButtonState("IDLE");
     };
@@ -296,27 +307,23 @@
 
     function skipSpeech() {
         if (synth.speaking || synth.pending) {
-            synth.cancel(); 
+            synth.cancel();
             isInterviewerSpeaking = false;
             isThinking = false;
             document.getElementById('skip-btn').style.display = 'none';
-            
+
             if (!document.querySelector('.status-finishing')) {
-                updateStatus('listening', '聞いています...'); 
-                toggleVisualizer(true);
-                try { recognition.start(); } catch(e) { console.log("Mic forced active"); }
+                startListening();
             }
         }
     }
 
     async function startInterview() {
         if (!CONFIG.apiKey) return alert("APIキーが設定されていません");
-        if (!checkSpeechRecognitionSupport()) return;
 
         conversationHistory = [];
         currentTopicIndex = 0;
-        promptLog = [];  // デバッグ用プロンプト履歴をリセット
-        networkErrorCount = 0;
+        promptLog = [];
 
         document.getElementById('chat-log').innerHTML = '';
         document.getElementById('summary-section').style.display = 'none';
@@ -326,9 +333,8 @@
         await initAudioContext();
         setButtonState("RUNNING");
         startTimer();
-        
-        try { recognition.start(); } catch(e) {}
 
+        // AIが先に話すので、speak()のonend内でstartListening()が呼ばれる
         const intro = "こんにちは。インタビューを始めます。まずは自己紹介をお願いします。";
         addMessage('ai', intro);
         conversationHistory.push({ role: "assistant", content: intro });
@@ -336,10 +342,10 @@
     }
 
     function stopRecognition() {
-        isInterviewerSpeaking = false; 
+        isInterviewerSpeaking = false;
         isThinking = false;
-        if(recognition) recognition.stop();
-        synth.cancel(); 
+        stopListening();
+        synth.cancel();
         toggleVisualizer(false);
     }
 
@@ -641,122 +647,166 @@ ${situationInstruction}
         if (selectedVoice) utterance.voice = selectedVoice;
     }
     
-    let networkErrorCount = 0;
-    const MAX_NETWORK_RETRIES = 3;
+    // --- Whisper STT: MediaRecorder + Groq Whisper API ---
 
-    function getSpeechRecognitionClass() {
-        return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    function getRecorderMimeType() {
+        const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+        for (const t of types) {
+            if (MediaRecorder.isTypeSupported(t)) return t;
+        }
+        return '';
     }
 
-    function checkSpeechRecognitionSupport() {
-        if (!getSpeechRecognitionClass()) {
-            updateStatus('error', 'このブラウザは音声認識に対応していません');
-            return false;
-        }
-        // Chromeでfile://の場合、音声認識はnetworkエラーになる
-        if (location.protocol === 'file:') {
-            const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
-            if (isChrome) {
-                updateStatus('error', 'Chrome: file://では音声認識が使えません');
-                alert(
-                    'Chromeでは file:// からの音声認識はブロックされます。\n\n' +
-                    '以下のいずれかで対応してください:\n' +
-                    '1. ターミナルで python3 -m http.server 8000 を実行し、\n' +
-                    '   http://localhost:8000 でアクセス\n' +
-                    '2. Safariを使用する（file://でも動作します）\n' +
-                    '3. HTTPSサーバーにデプロイする'
-                );
-                return false;
-            }
-        }
-        return true;
-    }
+    function startListening() {
+        if (isListening || isInterviewerSpeaking || isThinking) return;
+        if (!audioStream) { console.error('[STT] No audio stream'); return; }
 
-    function setupRecognition() {
-        const SpeechRecognitionClass = getSpeechRecognitionClass();
-        if (!SpeechRecognitionClass) {
-            updateStatus('error', 'このブラウザは音声認識に対応していません');
+        isListening = true;
+        audioChunks = [];
+        speechDetected = false;
+        silenceStartTime = Date.now();
+        recordingStartTime = Date.now();
+
+        const mimeType = getRecorderMimeType();
+        const options = mimeType ? { mimeType } : {};
+        console.log('[STT] Starting recorder, mime:', mimeType || 'default');
+
+        try {
+            mediaRecorder = new MediaRecorder(audioStream, options);
+        } catch(e) {
+            console.error('[STT] MediaRecorder creation failed:', e);
+            updateStatus('error', '録音の初期化に失敗しました');
+            isListening = false;
             return;
         }
-        recognition = new SpeechRecognitionClass();
-        recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = false;
-        recognition.onstart = () => {
-            networkErrorCount = 0;
-            updateStatus('listening', '聞いています...'); toggleVisualizer(true);
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
         };
-        recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript.trim();
-            console.log('[DEBUG] Speech recognized:', transcript, { isInterviewerSpeaking, isThinking });
-            if (!transcript) return;
-            if (isInterviewerSpeaking || isThinking) {
-                console.log('[DEBUG] Ignoring speech - AI is speaking or thinking');
+
+        mediaRecorder.onstop = async () => {
+            console.log('[STT] Recorder stopped, chunks:', audioChunks.length);
+            if (audioChunks.length === 0 || !speechDetected) {
+                console.log('[STT] No speech detected, restarting...');
+                if (!isInterviewerSpeaking && !isThinking) {
+                    setTimeout(() => startListening(), 300);
+                }
                 return;
             }
-            addMessage('user', transcript);
-            processUserResponse(transcript);
-        };
-        recognition.onend = () => {
-            console.log('[DEBUG] recognition.onend fired, isInterviewerSpeaking:', isInterviewerSpeaking, 'isThinking:', isThinking);
+
+            const mType = mediaRecorder.mimeType || 'audio/webm';
+            const blob = new Blob(audioChunks, { type: mType });
+            console.log('[STT] Audio blob size:', blob.size, 'type:', mType);
+
+            updateStatus('thinking', '音声を処理中...');
             toggleVisualizer(false);
-            if (!isInterviewerSpeaking && !isThinking && !document.querySelector('.status-error') && !document.querySelector('.status-finishing') && !document.querySelector('.status-idle')) {
-                console.log('[DEBUG] Attempting to restart recognition...');
-                setTimeout(() => {
-                    try {
-                        recognition.start();
-                        console.log('[DEBUG] recognition restarted');
-                    } catch(e) {
-                        console.log('[DEBUG] recognition restart failed:', e.message);
-                    }
-                }, 200);
-            }
-        };
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
 
-            if (event.error === 'aborted') return;
-
-            if (event.error === 'no-speech') {
-                setTimeout(() => { try { recognition.start(); } catch(e) {} }, 200);
-                return;
-            }
-
-            // networkエラー: 自動リトライ（Chrome + file:// で必ず発生）
-            if (event.error === 'network') {
-                networkErrorCount++;
-                console.log(`[DEBUG] Network error ${networkErrorCount}/${MAX_NETWORK_RETRIES}`);
-                if (networkErrorCount <= MAX_NETWORK_RETRIES) {
-                    updateStatus('error', `ネットワークエラー (リトライ ${networkErrorCount}/${MAX_NETWORK_RETRIES})...`);
-                    setTimeout(() => {
-                        try { recognition.start(); } catch(e) {}
-                    }, 1000 * networkErrorCount);
-                    return;
-                }
-                // リトライ上限到達
-                let msg = 'ネットワークエラーが繰り返し発生しています。\n\n';
-                if (location.protocol === 'file:') {
-                    msg += 'file:// プロトコルが原因です。\n' +
-                        '→ python3 -m http.server 8000 でローカルサーバーを起動し、\n' +
-                        '   http://localhost:8000 でアクセスしてください。\n' +
-                        '→ またはSafariをお使いください。';
+            try {
+                const text = await transcribeWithWhisper(blob);
+                console.log('[STT] Transcription:', text);
+                if (text && text.trim()) {
+                    addMessage('user', text.trim());
+                    processUserResponse(text.trim());
                 } else {
-                    msg += 'インターネット接続を確認してください。\n' +
-                        'Chromeの音声認識はGoogleサーバーとの通信が必要です。';
+                    console.log('[STT] Empty transcription, restarting...');
+                    if (!isInterviewerSpeaking && !isThinking) {
+                        startListening();
+                    }
                 }
-                updateStatus('error', 'ネットワークエラー: 音声認識に接続できません');
-                alert(msg);
-                networkErrorCount = 0;
+            } catch(err) {
+                console.error('[STT] Whisper error:', err);
+                updateStatus('error', '音声認識エラー: ' + err.message);
+                // エラー後も聞き直し
+                setTimeout(() => {
+                    if (!isInterviewerSpeaking && !isThinking) startListening();
+                }, 2000);
+            }
+        };
+
+        mediaRecorder.start(250);
+        updateStatus('listening', '聞いています...');
+        toggleVisualizer(true);
+        startSilenceDetection();
+    }
+
+    function startSilenceDetection() {
+        clearInterval(silenceCheckInterval);
+        silenceCheckInterval = setInterval(() => {
+            if (!isListening || !analyser) return;
+
+            analyser.getByteTimeDomainData(dataArray);
+
+            // RMS計算
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const val = (dataArray[i] - 128) / 128;
+                sum += val * val;
+            }
+            const rms = Math.sqrt(sum / dataArray.length) * 100;
+
+            if (rms > SILENCE_THRESHOLD) {
+                speechDetected = true;
+                silenceStartTime = Date.now();
+            }
+
+            const elapsed = Date.now() - recordingStartTime;
+            const silenceDuration = Date.now() - silenceStartTime;
+
+            // 発話後に2秒無音 → 停止
+            if (speechDetected && silenceDuration >= SILENCE_DURATION) {
+                console.log('[STT] Silence detected, stopping');
+                stopListening();
                 return;
             }
 
-            if (event.error === 'not-allowed') {
-                alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。');
-            } else if (event.error === 'audio-capture') {
-                alert('マイクが見つかりませんでした。マイクを接続してください。');
-            } else {
-                console.error('音声認識エラー:', event.error);
+            // 最大録音時間超過 → 強制停止
+            if (elapsed >= MAX_RECORD_DURATION) {
+                console.log('[STT] Max duration reached, stopping');
+                stopListening();
+                return;
             }
-            updateStatus('error', '音声認識エラー: ' + event.error);
-        };
+        }, 200);
+    }
+
+    function stopListening() {
+        isListening = false;
+        clearInterval(silenceCheckInterval);
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+    }
+
+    async function transcribeWithWhisper(audioBlob) {
+        const ext = audioBlob.type.includes('mp4') ? 'mp4' : audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+        const formData = new FormData();
+        formData.append('file', audioBlob, `audio.${ext}`);
+        formData.append('model', 'whisper-large-v3-turbo');
+        formData.append('language', 'ja');
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${CONFIG.apiKey}` },
+                body: formData,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || `Whisper API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.text || '';
+        } catch(err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('音声認識がタイムアウトしました');
+            throw err;
+        }
     }
 
     function speak(text, onComplete = null) {
@@ -779,13 +829,7 @@ ${situationInstruction}
                 isThinking = false;
                 if (onComplete) { onComplete(); return; }
                 if(!document.querySelector('.status-error') && !document.querySelector('.status-finishing')){
-                    updateStatus('listening', '聞いています...'); toggleVisualizer(true);
-                    try {
-                        recognition.start();
-                        console.log('[DEBUG] recognition.start() called');
-                    } catch(e) {
-                        console.log("[DEBUG] recognition.start() error:", e.message);
-                    }
+                    startListening();
                 }
             }
         };
@@ -805,9 +849,9 @@ ${situationInstruction}
     }
     async function initAudioContext() {
         if (audioContext) return;
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioContext.createMediaStreamSource(stream);
+        const source = audioContext.createMediaStreamSource(audioStream);
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 2048; source.connect(analyser);
         dataArray = new Uint8Array(analyser.frequencyBinCount);
