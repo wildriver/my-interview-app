@@ -681,12 +681,41 @@ ${situationInstruction}
         };
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed') {
-                alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。');
-            } else if (event.error === 'no-speech') {
-                // 無視（音声が検出されなかっただけ）
-            } else {
-                console.error('音声認識エラー:', event.error);
+            
+            // エラーの種類に応じた詳細なメッセージ
+            let errorMessage = '';
+            switch (event.error) {
+                case 'not-allowed':
+                    errorMessage = 'マイクへのアクセスが拒否されました。ブラウザの設定でマイクへのアクセスを許可してください。';
+                    break;
+                case 'network':
+                    errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+                    break;
+                case 'no-speech':
+                    errorMessage = '音声が検出されませんでした。マイクに向かって話してみてください。';
+                    break;
+                case 'audio-capture':
+                    errorMessage = 'マイクが見つかりませんでした。マイクを接続してください。';
+                    break;
+                case 'aborted':
+                    errorMessage = '音声認識が中断されました。';
+                    break;
+                case 'unknown':
+                    errorMessage = '不明なエラーが発生しました。';
+                    break;
+                default:
+                    errorMessage = '音声認識エラー: ' + event.error;
+            }
+            
+            // エラー時のステータス更新
+            updateStatus('error', 'エラー: ' + errorMessage);
+            
+            // エラーメッセージを表示
+            alert(errorMessage);
+            
+            // エラー時も戻るボタンを有効化
+            if(document.getElementById('ctrl-finished').style.display !== 'none') {
+                document.getElementById('back-btn').disabled = false;
             }
         };
     }
