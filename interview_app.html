@@ -6,15 +6,15 @@
     <title>AI Interviewer (2026-02-09)</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; position: relative; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #444; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #777; font-size: 0.9em; margin-bottom: 20px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }
         
         #timer {
             position: absolute; top: 20px; right: 20px;
-            font-size: 1.5em; font-weight: bold; color: #555;
+            font-size: 1.5em; font-weight: bold; color: #2c3e50;
             background: #fff; padding: 5px 15px; border-radius: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .status-box { padding: 12px; margin-bottom: 10px; text-align: center; font-weight: bold; border-radius: 8px; transition: all 0.3s; }
@@ -32,45 +32,58 @@
         .content-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
         .chat-section { flex: 1; min-width: 300px; }
         .summary-section { flex: 1; min-width: 300px; display: none; }
-        #chat-log { height: 400px; overflow-y: auto; border: 1px solid #dee2e6; padding: 20px; background: #fafafa; border-radius: 8px; }
+        #chat-log { height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 20px; background: #fafafa; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
         
         .message { margin-bottom: 15px; padding: 12px 16px; border-radius: 12px; max-width: 90%; line-height: 1.5; }
-        .role-user { background-color: #007bff; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
-        .role-ai { background-color: #fff; border: 1px solid #e9ecef; margin-right: auto; border-bottom-left-radius: 2px; }
+        .role-user { background-color: #f55036; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+        .role-ai { background-color: #fff; border: 1px solid #eee; margin-right: auto; border-bottom-left-radius: 2px; }
         
-        #summary-box { height: 350px; overflow-y: auto; border: 2px solid #28a745; padding: 20px; background: #fff; border-radius: 8px; line-height: 1.8; white-space: pre-wrap; margin-bottom: 10px; }
-        .summary-title { font-weight: bold; color: #28a745; margin-bottom: 10px; }
+        #summary-box { height: 350px; overflow-y: auto; border: 1px solid #eee; padding: 20px; background: #fff; border-radius: 8px; line-height: 1.8; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .summary-title { font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-left: 4px solid #f55036; padding-left: 10px; }
 
         /* --- ボタンエリアのスタイル --- */
-        .controls { margin-top: 20px; }
-        
+        .controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
         /* 共通ボタンスタイル */
-        .btn { 
-            padding: 15px 30px; font-size: 1.1em; font-weight: bold; 
-            cursor: pointer; border: none; border-radius: 50px; 
+        .btn {
+            padding: 14px 30px; font-size: 1em; font-weight: bold;
+            cursor: pointer; border: none; border-radius: 50px;
             color: white; transition: all 0.2s; width: 100%;
         }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn:active { transform: translateY(1px); }
 
-        .btn-start { background-color: #007bff; max-width: 400px; display: block; margin: 0 auto; }
-        .btn-abort { background-color: #dc3545; }
-        .btn-finish { background-color: #28a745; }
-        .btn-back { background-color: #6c757d; max-width: 400px; display: block; margin: 0 auto; }
+        .btn-start { background-color: #f55036; max-width: 400px; display: block; margin: 0 auto; }
+        .btn-start:hover { background-color: #d43f29; }
+        .btn-abort { background-color: #95a5a6; }
+        .btn-abort:hover { background-color: #7f8c8d; }
+        .btn-finish { background-color: #f55036; }
+        .btn-finish:hover { background-color: #d43f29; }
+        .btn-back { background-color: #f55036; max-width: 400px; display: block; margin: 0 auto; }
+        .btn-back:hover { background-color: #d43f29; }
 
-        /* 実行中のボタンコンテナ（横並び） */
-        .running-controls {
-            display: flex; gap: 15px; justify-content: center;
-            width: 100%; max-width: 600px; margin: 0 auto;
+        /* インタビュー操作エリア */
+        .interview-actions {
+            background: #fafafa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
         }
-        .running-controls button { flex: 1; }
 
-        /* スキップ・返信ボタン */
-        #skip-btn-container { text-align: center; margin-bottom: 15px; min-height: 40px; display: flex; justify-content: center; gap: 10px; }
+        /* スキップ・返信ボタン行 */
+        #skip-btn-container {
+            display: flex; justify-content: center; gap: 10px;
+            margin-bottom: 12px; min-height: 36px;
+        }
         #skip-btn, #reply-btn {
             background-color: #6c757d; color: white; border: none;
-            padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 0.9em;
-            cursor: pointer; display: none;
+            padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85em;
+            cursor: pointer; display: none; transition: all 0.2s;
         }
         #skip-btn:hover { background-color: #5a6268; }
         #reply-btn { background-color: #e67e22; }
@@ -78,33 +91,41 @@
 
         /* テキスト入力 */
         .text-input-row {
-            display: flex; gap: 8px; max-width: 600px; margin: 0 auto 15px;
+            display: flex; gap: 8px; max-width: 100%; margin: 0 auto 12px;
         }
         .text-input-row input {
-            flex: 1; padding: 10px 15px; border: 1px solid #ccc; border-radius: 25px;
-            font-size: 1em; outline: none; transition: border-color 0.2s;
+            flex: 1; padding: 9px 14px; border: 1px solid #bdc3c7; border-radius: 50px;
+            font-size: 0.95em; outline: none; transition: border-color 0.2s;
         }
-        .text-input-row input:focus { border-color: #007bff; }
+        .text-input-row input:focus { border-color: #f55036; box-shadow: 0 0 0 2px rgba(245,80,54,0.1); }
         .text-input-row button {
-            padding: 10px 20px; background-color: #007bff; color: white; border: none;
-            border-radius: 25px; font-weight: bold; font-size: 0.9em; cursor: pointer;
-            white-space: nowrap;
+            padding: 9px 18px; background-color: #f55036; color: white; border: none;
+            border-radius: 50px; font-weight: bold; font-size: 0.85em; cursor: pointer;
+            white-space: nowrap; transition: all 0.2s;
         }
-        .text-input-row button:hover { background-color: #0056b3; }
+        .text-input-row button:hover { background-color: #d43f29; }
 
         /* 次の話題ボタン */
         #next-topic-btn {
             background-color: #3498db; color: white; border: none;
-            padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 0.9em;
-            cursor: pointer; display: inline-block;
+            padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85em;
+            cursor: pointer; display: inline-block; transition: all 0.2s;
         }
         #next-topic-btn:hover { background-color: #2980b9; }
 
-        /* ビルドバージョン */
-        .build-version { text-align: right; font-size: 0.75em; color: #aaa; margin-top: 10px; }
+        /* 実行中のメインボタンコンテナ（横並び） */
+        .running-controls {
+            display: flex; gap: 12px; justify-content: center;
+            width: 100%; max-width: 500px; margin: 0 auto;
+        }
+        .running-controls button { flex: 1; font-size: 0.95em; padding: 12px 20px; }
 
-        .copy-btn { width: 100%; padding: 10px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .copy-btn:disabled, .btn-back:disabled { background-color: #adb5bd; cursor: not-allowed; opacity: 0.7; }
+        /* ビルドバージョン */
+        .build-version { text-align: right; font-size: 0.75em; color: #bdc3c7; margin-top: 10px; }
+
+        .copy-btn { width: 100%; padding: 10px; background-color: #f55036; color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .copy-btn:hover { background-color: #d43f29; }
+        .copy-btn:disabled, .btn-back:disabled { background-color: #bdc3c7; cursor: not-allowed; opacity: 0.7; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
@@ -114,14 +135,13 @@
             justify-content: flex-end;
             margin-top: 15px;
             padding-top: 10px;
-            border-top: 1px solid #eee;
         }
         .debug-toggle {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 0.85em;
-            color: #666;
+            color: #7f8c8d;
             cursor: pointer;
         }
         .debug-toggle input[type="checkbox"] {
@@ -201,29 +221,31 @@
     </div>
 
     <div class="controls">
-        <div id="skip-btn-container">
-            <button id="skip-btn" onclick="skipSpeech()">⏩ Skip</button>
-            <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
-        </div>
-
-        <div id="text-input-container" style="display:none;">
-            <div class="text-input-row">
-                <input type="text" id="text-input" placeholder="テキストで入力..." onkeydown="if(event.key==='Enter')sendTextInput()">
-                <button onclick="sendTextInput()">送信</button>
-            </div>
-        </div>
-
         <div id="ctrl-idle">
             <button class="btn btn-start" onclick="startInterview()">インタビュー開始</button>
         </div>
 
-        <div id="ctrl-running" class="running-controls" style="display:none;">
-            <button class="btn btn-abort" onclick="abortInterview()">中止する<br><span style="font-size:0.7em; font-weight:normal">(保存されません)</span></button>
-            <button class="btn btn-finish" onclick="forceFinish()">終了する<br><span style="font-size:0.7em; font-weight:normal">(サマリー生成)</span></button>
+        <div id="interview-actions-wrapper" class="interview-actions" style="display:none;">
+            <div id="skip-btn-container">
+                <button id="skip-btn" onclick="skipSpeech()">⏩ Skip</button>
+                <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
+            </div>
+
+            <div id="text-input-container" style="display:none;">
+                <div class="text-input-row">
+                    <input type="text" id="text-input" placeholder="テキストで入力..." onkeydown="if(event.key==='Enter')sendTextInput()">
+                    <button onclick="sendTextInput()">送信</button>
+                </div>
+            </div>
+
+            <div id="ctrl-actions" style="display:none; text-align:center;">
+                <button id="next-topic-btn" onclick="requestNextTopic()">⏭ 次の話題へ</button>
+            </div>
         </div>
 
-        <div id="ctrl-actions" style="display:none; text-align:center; margin-top:10px;">
-            <button id="next-topic-btn" onclick="requestNextTopic()">⏭ 次の話題へ</button>
+        <div id="ctrl-running" class="running-controls" style="display:none;">
+            <button class="btn btn-abort" onclick="abortInterview()">中止する</button>
+            <button class="btn btn-finish" onclick="forceFinish()">終了する</button>
         </div>
 
         <div id="ctrl-finished" style="display:none;">
@@ -241,7 +263,7 @@
     <div id="debug-box" class="debug-box">
         <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
     </div>
-    <div class="build-version">Build: 2026-02-09 00:30</div>
+    <div class="build-version">Build: 2026-02-09 08:30</div>
 </div>
 
 <script>
@@ -289,6 +311,7 @@
         document.getElementById('ctrl-idle').style.display = 'none';
         document.getElementById('ctrl-running').style.display = 'none';
         document.getElementById('ctrl-finished').style.display = 'none';
+        document.getElementById('interview-actions-wrapper').style.display = 'none';
         document.getElementById('ctrl-actions').style.display = 'none';
         document.getElementById('text-input-container').style.display = 'none';
         document.getElementById('skip-btn').style.display = 'none';
@@ -297,6 +320,7 @@
         if (state === "IDLE") {
             document.getElementById('ctrl-idle').style.display = 'block';
         } else if (state === "RUNNING") {
+            document.getElementById('interview-actions-wrapper').style.display = 'block';
             document.getElementById('ctrl-running').style.display = 'flex';
             document.getElementById('ctrl-actions').style.display = 'block';
             document.getElementById('text-input-container').style.display = 'block';
@@ -307,6 +331,7 @@
 
     function abortInterview() {
         if (confirm("インタビューを中止しますか？\n（内容は保存されません）")) {
+            interviewRunning = false;
             stopRecognition();
             clearInterval(timerInterval);
             window.location.href = 'index.html';
@@ -315,12 +340,12 @@
 
     function forceFinish() {
         if (confirm("現在までの内容でインタビューを終了し、サマリーを作成しますか？")) {
+            interviewRunning = false;
             stopTimer();
             stopRecognition();
             updateStatus('finishing', '終了処理中... サマリーを作成します');
             document.getElementById('ctrl-running').style.display = 'none';
-            document.getElementById('ctrl-actions').style.display = 'none';
-            document.getElementById('text-input-container').style.display = 'none';
+            document.getElementById('interview-actions-wrapper').style.display = 'none';
             generateSummary();
         }
     }
@@ -370,6 +395,7 @@
         await initAudioContext();
         await initWhisper();
         setButtonState("RUNNING");
+        interviewRunning = true;
         startTimer();
 
         const intro = "こんにちは。インタビューを始めます。まずは自己紹介をお願いします。";
@@ -415,6 +441,7 @@
             conversationHistory.push({ role: "assistant", content: aiText });
 
             if (aiText.includes("終了します") || aiText.includes("終わります")) {
+                interviewRunning = false;
                 stopTimer();
                 updateStatus('finishing', '挨拶の読み上げ中...');
 
@@ -696,6 +723,7 @@ ${situationInstruction}
     let silenceStartTime = 0;
     let recordingStartTime = 0;
     let isListening = false;
+    let interviewRunning = false;
     let consecutiveSilenceCount = 0;
     const SILENCE_THRESHOLD = 5;
     const SILENCE_DURATION = 2000;
@@ -756,7 +784,7 @@ ${situationInstruction}
     }
 
     function startListening() {
-        if (isListening || !audioStream) return;
+        if (isListening || !audioStream || !interviewRunning) return;
         isListening = true;
         audioChunks = [];
         speechDetected = false;
@@ -900,6 +928,7 @@ ${situationInstruction}
     }
 
     function handleSilenceTimeout() {
+        if (!interviewRunning) return;
         console.log('[STT] Silence timeout - asking user');
         consecutiveSilenceCount = 0;
         updateStatus('idle', '無音が続いています');
