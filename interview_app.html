@@ -321,11 +321,19 @@
         document.getElementById('summary-box').innerText = '...';
         document.getElementById('debug-box').innerHTML = '<div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>';
 
+        setupRecognition();
         await initAudioContext();
         setButtonState("RUNNING");
         startTimer();
         
-        try { recognition.start(); } catch(e) {}
+        try { 
+            recognition.start(); 
+            console.log('[DEBUG] Recognition started successfully');
+        } catch(e) {
+            console.error('[DEBUG] Recognition start error:', e);
+            alert('音声認識の開始に失敗しました。マイクへのアクセス権限を確認してください。');
+            return;
+        }
 
         const intro = "こんにちは。インタビューを始めます。まずは自己紹介をお願いします。";
         addMessage('ai', intro);
