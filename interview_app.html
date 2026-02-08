@@ -311,29 +311,23 @@
 
     async function startInterview() {
         if (!CONFIG.apiKey) return alert("APIキーが設定されていません");
+        if (!checkSpeechRecognitionSupport()) return;
 
         conversationHistory = [];
         currentTopicIndex = 0;
         promptLog = [];  // デバッグ用プロンプト履歴をリセット
+        networkErrorCount = 0;
 
         document.getElementById('chat-log').innerHTML = '';
         document.getElementById('summary-section').style.display = 'none';
         document.getElementById('summary-box').innerText = '...';
         document.getElementById('debug-box').innerHTML = '<div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>';
 
-        setupRecognition();
         await initAudioContext();
         setButtonState("RUNNING");
         startTimer();
         
-        try { 
-            recognition.start(); 
-            console.log('[DEBUG] Recognition started successfully');
-        } catch(e) {
-            console.error('[DEBUG] Recognition start error:', e);
-            alert('音声認識の開始に失敗しました。マイクへのアクセス権限を確認してください。');
-            return;
-        }
+        try { recognition.start(); } catch(e) {}
 
         const intro = "こんにちは。インタビューを始めます。まずは自己紹介をお願いします。";
         addMessage('ai', intro);
@@ -647,11 +641,49 @@ ${situationInstruction}
         if (selectedVoice) utterance.voice = selectedVoice;
     }
     
+    let networkErrorCount = 0;
+    const MAX_NETWORK_RETRIES = 3;
+
+    function getSpeechRecognitionClass() {
+        return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    }
+
+    function checkSpeechRecognitionSupport() {
+        if (!getSpeechRecognitionClass()) {
+            updateStatus('error', 'このブラウザは音声認識に対応していません');
+            return false;
+        }
+        // Chromeでfile://の場合、音声認識はnetworkエラーになる
+        if (location.protocol === 'file:') {
+            const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+            if (isChrome) {
+                updateStatus('error', 'Chrome: file://では音声認識が使えません');
+                alert(
+                    'Chromeでは file:// からの音声認識はブロックされます。\n\n' +
+                    '以下のいずれかで対応してください:\n' +
+                    '1. ターミナルで python3 -m http.server 8000 を実行し、\n' +
+                    '   http://localhost:8000 でアクセス\n' +
+                    '2. Safariを使用する（file://でも動作します）\n' +
+                    '3. HTTPSサーバーにデプロイする'
+                );
+                return false;
+            }
+        }
+        return true;
+    }
+
     function setupRecognition() {
-        if (!('webkitSpeechRecognition' in window)) return alert("Chromeブラウザで開いてください");
-        recognition = new webkitSpeechRecognition();
+        const SpeechRecognitionClass = getSpeechRecognitionClass();
+        if (!SpeechRecognitionClass) {
+            updateStatus('error', 'このブラウザは音声認識に対応していません');
+            return;
+        }
+        recognition = new SpeechRecognitionClass();
         recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = false;
-        recognition.onstart = () => { updateStatus('listening', '聞いています...'); toggleVisualizer(true); };
+        recognition.onstart = () => {
+            networkErrorCount = 0;
+            updateStatus('listening', '聞いています...'); toggleVisualizer(true);
+        };
         recognition.onresult = (event) => {
             const transcript = event.results[event.results.length - 1][0].transcript.trim();
             console.log('[DEBUG] Speech recognized:', transcript, { isInterviewerSpeaking, isThinking });
@@ -666,7 +698,6 @@ ${situationInstruction}
         recognition.onend = () => {
             console.log('[DEBUG] recognition.onend fired, isInterviewerSpeaking:', isInterviewerSpeaking, 'isThinking:', isThinking);
             toggleVisualizer(false);
-            // 音声認識が予期せず終了した場合、再起動を試みる
             if (!isInterviewerSpeaking && !isThinking && !document.querySelector('.status-error') && !document.querySelector('.status-finishing') && !document.querySelector('.status-idle')) {
                 console.log('[DEBUG] Attempting to restart recognition...');
                 setTimeout(() => {
@@ -676,47 +707,55 @@ ${situationInstruction}
                     } catch(e) {
                         console.log('[DEBUG] recognition restart failed:', e.message);
                     }
-                }, 100);
+                }, 200);
             }
         };
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            
-            // エラーの種類に応じた詳細なメッセージ
-            let errorMessage = '';
-            switch (event.error) {
-                case 'not-allowed':
-                    errorMessage = 'マイクへのアクセスが拒否されました。ブラウザの設定でマイクへのアクセスを許可してください。';
-                    break;
-                case 'network':
-                    errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
-                    break;
-                case 'no-speech':
-                    errorMessage = '音声が検出されませんでした。マイクに向かって話してみてください。';
-                    break;
-                case 'audio-capture':
-                    errorMessage = 'マイクが見つかりませんでした。マイクを接続してください。';
-                    break;
-                case 'aborted':
-                    errorMessage = '音声認識が中断されました。';
-                    break;
-                case 'unknown':
-                    errorMessage = '不明なエラーが発生しました。';
-                    break;
-                default:
-                    errorMessage = '音声認識エラー: ' + event.error;
+
+            if (event.error === 'aborted') return;
+
+            if (event.error === 'no-speech') {
+                setTimeout(() => { try { recognition.start(); } catch(e) {} }, 200);
+                return;
             }
-            
-            // エラー時のステータス更新
-            updateStatus('error', 'エラー: ' + errorMessage);
-            
-            // エラーメッセージを表示
-            alert(errorMessage);
-            
-            // エラー時も戻るボタンを有効化
-            if(document.getElementById('ctrl-finished').style.display !== 'none') {
-                document.getElementById('back-btn').disabled = false;
+
+            // networkエラー: 自動リトライ（Chrome + file:// で必ず発生）
+            if (event.error === 'network') {
+                networkErrorCount++;
+                console.log(`[DEBUG] Network error ${networkErrorCount}/${MAX_NETWORK_RETRIES}`);
+                if (networkErrorCount <= MAX_NETWORK_RETRIES) {
+                    updateStatus('error', `ネットワークエラー (リトライ ${networkErrorCount}/${MAX_NETWORK_RETRIES})...`);
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 1000 * networkErrorCount);
+                    return;
+                }
+                // リトライ上限到達
+                let msg = 'ネットワークエラーが繰り返し発生しています。\n\n';
+                if (location.protocol === 'file:') {
+                    msg += 'file:// プロトコルが原因です。\n' +
+                        '→ python3 -m http.server 8000 でローカルサーバーを起動し、\n' +
+                        '   http://localhost:8000 でアクセスしてください。\n' +
+                        '→ またはSafariをお使いください。';
+                } else {
+                    msg += 'インターネット接続を確認してください。\n' +
+                        'Chromeの音声認識はGoogleサーバーとの通信が必要です。';
+                }
+                updateStatus('error', 'ネットワークエラー: 音声認識に接続できません');
+                alert(msg);
+                networkErrorCount = 0;
+                return;
             }
+
+            if (event.error === 'not-allowed') {
+                alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。');
+            } else if (event.error === 'audio-capture') {
+                alert('マイクが見つかりませんでした。マイクを接続してください。');
+            } else {
+                console.error('音声認識エラー:', event.error);
+            }
+            updateStatus('error', '音声認識エラー: ' + event.error);
         };
     }
 
