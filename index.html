@@ -19,9 +19,9 @@
 
         .layout-container {
             display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 20px;
-            padding: 20px;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            padding: 15px;
             height: 100vh;
             box-sizing: border-box;
         }
@@ -36,34 +36,47 @@
         }
 
         .col-header {
-            padding: 15px 20px;
+            padding: 12px 20px;
             border-bottom: 1px solid #eee;
             background: #fafafa;
             font-weight: bold;
             color: #2c3e50;
             flex-shrink: 0;
+            font-size: 0.95em;
         }
 
         .col-content {
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             flex-grow: 1;
         }
 
+        /* Settings 3-column grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.3fr;
+            gap: 20px;
+        }
+
+        .settings-col {
+            display: flex;
+            flex-direction: column;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 0.9em;
+            margin-bottom: 4px;
+            font-size: 0.85em;
             color: #34495e;
         }
 
         .help-text {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #7f8c8d;
             margin-top: 2px;
             margin-bottom: 5px;
@@ -73,15 +86,14 @@
         textarea,
         select {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #bdc3c7;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             box-sizing: border-box;
         }
 
         textarea {
-            height: 80px;
             resize: vertical;
         }
 
@@ -101,8 +113,8 @@
         .range-wrap {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.9em;
+            gap: 8px;
+            font-size: 0.85em;
         }
 
         input[type="range"] {
@@ -128,7 +140,7 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         .btn:hover {
@@ -141,14 +153,13 @@
         }
 
         .btn-preview {
-            display: block;
-            width: 100%;
-            padding: 8px;
+            display: inline-block;
+            padding: 6px 12px;
             background-color: #e9ecef;
             color: #333;
             border: 1px solid #ced4da;
             border-radius: 6px;
-            font-size: 0.85em;
+            font-size: 0.8em;
             cursor: pointer;
             text-align: center;
         }
@@ -159,10 +170,10 @@
 
         .radio-group label {
             display: inline-block;
-            margin-right: 10px;
+            margin-right: 8px;
             font-weight: normal;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .status-indicator {
@@ -182,23 +193,31 @@
             color: #e67e22;
         }
 
+        /* Bottom pane: history list + detail */
+        .bottom-pane {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 15px;
+            min-height: 0;
+        }
+
         /* 履歴・詳細 */
         .history-empty {
             text-align: center;
             color: #999;
-            padding: 40px 20px;
+            padding: 30px 15px;
         }
 
         .history-empty-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
+            font-size: 2.5em;
+            margin-bottom: 8px;
         }
 
         .history-item {
-            padding: 12px 15px;
+            padding: 10px 12px;
             border: 1px solid #eee;
             border-radius: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -214,14 +233,14 @@
         }
 
         .history-date {
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #888;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .history-title {
             font-weight: bold;
-            font-size: 0.95em;
+            font-size: 0.85em;
             color: #333;
             white-space: nowrap;
             overflow: hidden;
@@ -229,80 +248,67 @@
         }
 
         /* 詳細表示エリア */
-        #history-detail {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #eee;
-        }
-
         .detail-placeholder {
             text-align: center;
             color: #999;
-            margin-top: 50px;
+            margin-top: 60px;
+            font-size: 0.9em;
         }
 
-        .back-to-list {
-            background: none;
-            border: none;
-            color: #007bff;
-            cursor: pointer;
-            font-size: 0.9em;
-            padding: 5px 0;
+        .detail-placeholder-icon {
+            font-size: 2.5em;
             margin-bottom: 10px;
         }
 
-        .back-to-list:hover {
-            text-decoration: underline;
-        }
-
         .detail-header {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #eee;
         }
 
         .detail-title {
-            font-size: 1.4em;
+            font-size: 1.2em;
             font-weight: bold;
             color: #f55036;
         }
 
         .detail-meta {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: #666;
-            margin-top: 5px;
+            margin-top: 3px;
         }
 
         .detail-section-title {
             font-weight: bold;
-            margin: 20px 0 10px 0;
+            margin: 15px 0 8px 0;
             color: #444;
             border-left: 4px solid #28a745;
             padding-left: 8px;
+            font-size: 0.9em;
         }
 
         .detail-summary {
             background: #f9f9f9;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             line-height: 1.6;
             white-space: pre-wrap;
-            font-size: 0.95em;
-        }
-
-        .detail-chat {
             font-size: 0.9em;
         }
 
+        .detail-chat {
+            font-size: 0.85em;
+        }
+
         .chat-row {
-            margin-bottom: 8px;
-            padding: 8px;
+            margin-bottom: 6px;
+            padding: 6px 8px;
             border-radius: 6px;
         }
 
         .chat-role {
             font-weight: bold;
-            font-size: 0.8em;
+            font-size: 0.75em;
             margin-bottom: 2px;
         }
 
@@ -317,32 +323,33 @@
         /* 設定情報表示 */
         .settings-info {
             background: #f0f7ff;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+            font-size: 0.85em;
+            margin-bottom: 8px;
         }
 
         .setting-row {
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
+            gap: 4px;
         }
 
         .setting-label {
             font-weight: bold;
             color: #555;
-            min-width: 70px;
+            min-width: 60px;
+            font-size: 0.9em;
         }
 
         .setting-text {
             background: #fff;
-            padding: 5px 8px;
+            padding: 4px 6px;
             border-radius: 4px;
             font-size: 0.85em;
             color: #666;
-            margin-top: 3px;
+            margin-top: 2px;
             width: 100%;
             white-space: pre-wrap;
             word-break: break-word;
@@ -352,10 +359,10 @@
             background: #007bff;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.85em;
             margin-top: 5px;
         }
 
@@ -367,11 +374,11 @@
             background: #dc3545;
             color: white;
             border: none;
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.8em;
-            margin-top: 8px;
+            font-size: 0.75em;
+            margin-top: 5px;
         }
 
         .btn-delete:hover {
@@ -382,10 +389,10 @@
             background: #6f42c1;
             color: white;
             border: none;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.75em;
+            font-size: 0.7em;
         }
 
         .btn-generate:hover {
@@ -400,32 +407,28 @@
         /* セクションタイトル */
         .section-title {
             font-weight: bold;
-            font-size: 0.95em;
+            font-size: 0.9em;
             color: #333;
-            margin: 15px 0 10px 0;
-            padding: 8px 10px;
+            margin: 0 0 10px 0;
+            padding: 6px 8px;
             background: #f0f0f0;
             border-radius: 6px;
             border-left: 4px solid #007bff;
-        }
-
-        .section-title:first-child {
-            margin-top: 0;
         }
 
         /* AI人格選択 */
         .persona-options {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-top: 5px;
+            gap: 4px;
+            margin-top: 4px;
         }
 
         .persona-option {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
+            gap: 6px;
+            padding: 5px 8px;
             border: 1px solid #ddd;
             border-radius: 6px;
             cursor: pointer;
@@ -447,12 +450,12 @@
 
         .persona-label {
             font-weight: bold;
-            font-size: 0.9em;
-            min-width: 90px;
+            font-size: 0.8em;
+            min-width: 80px;
         }
 
         .persona-desc {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #666;
         }
 
@@ -555,9 +558,19 @@
             color: #ff6b6b;
         }
 
-        @media (max-width: 900px) {
+        /* STT test result */
+        .stt-test-result {
+            font-size: 0.8em;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 5px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 1100px) {
             .layout-container {
-                grid-template-columns: 1fr;
+                grid-template-rows: auto;
                 height: auto;
                 overflow: auto;
             }
@@ -567,8 +580,16 @@
                 overflow: auto;
             }
 
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-pane {
+                grid-template-columns: 1fr;
+            }
+
             .col {
-                height: 500px;
+                min-height: 400px;
             }
         }
     </style>
@@ -599,154 +620,185 @@
 
     <div class="layout-container">
 
-        <div class="col col-1">
+        <!-- ===== 上段: 設定 (3カラム) ===== -->
+        <div class="col">
             <div class="col-header">🛠 インタビュー設定</div>
             <div class="col-content">
-                <!-- ===== AIの設定 ===== -->
-                <div class="section-title">🤖 AIの設定</div>
+                <div class="settings-grid">
 
-                <div class="form-group">
-                    <label>
-                        Groq API Key
-                        <a href="https://console.groq.com/keys" target="_blank"
-                            style="font-size: 0.85em; margin-left: 8px;">[APIキーを取得]</a>
-                        <span id="api-status" class="status-indicator"></span>
-                    </label>
-                    <input type="text" id="apiKey" placeholder="gsk_..." onblur="validateApi()">
-                    <label style="font-size: 0.85em; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
-                        <input type="checkbox" id="saveApiKey"> このブラウザに保存する
-                    </label>
-                </div>
+                    <!-- === 左カラム: AIの設定 === -->
+                    <div class="settings-col">
+                        <div class="section-title">🤖 AIの設定</div>
 
-                <div class="form-group">
-                    <label>AIのモデル (大きなモデルほど無料API枠が少)</label>
-                    <select id="modelName">
-                        <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
-                        <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
-                        <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B (高速)</option>
-                        <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
-                        <option value="qwen/qwen3-32b">Qwen3 32B</option>
-                        <option value="llama-3.3-70b-versatile">Llama 3.3 70B (高品質)</option>
-                        <option value="openai/gpt-oss-120b">GPT-OSS 120B (高品質)</option>
-                        <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2 Instruct</option>
-                    </select>
-                </div>
+                        <div class="form-group">
+                            <label>
+                                Groq API Key
+                                <a href="https://console.groq.com/keys" target="_blank"
+                                    style="font-size: 0.85em; margin-left: 8px;">[取得]</a>
+                                <span id="api-status" class="status-indicator"></span>
+                            </label>
+                            <input type="text" id="apiKey" placeholder="gsk_..." onblur="validateApi()">
+                            <label style="font-size: 0.8em; margin-top: 4px; display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="saveApiKey"> このブラウザに保存する
+                            </label>
+                        </div>
 
-                <div class="form-group">
-                    <label>インタビューAIの性格</label>
-                    <div class="persona-options">
-                        <label class="persona-option">
-                            <input type="radio" name="personaType" value="listener" checked>
-                            <span class="persona-label">🎧 傾聴型</span>
-                            <span class="persona-desc">本音を引き出すカウンセラー風</span>
-                        </label>
-                        <label class="persona-option">
-                            <input type="radio" name="personaType" value="energetic">
-                            <span class="persona-label">🎤 盛り上げ型</span>
-                            <span class="persona-desc">ポジティブMC風に楽しく</span>
-                        </label>
-                        <label class="persona-option">
-                            <input type="radio" name="personaType" value="analytical">
-                            <span class="persona-label">🔍 深掘り型</span>
-                            <span class="persona-desc">冷静に分析・仮説検証</span>
-                        </label>
-                        <label class="persona-option">
-                            <input type="radio" name="personaType" value="critical">
-                            <span class="persona-label">📝 チェック型</span>
-                            <span class="persona-desc">やや批判的に検証</span>
-                        </label>
-                        <label class="persona-option">
-                            <input type="radio" name="personaType" value="editor">
-                            <span class="persona-label">📋 要約型</span>
-                            <span class="persona-desc">まとめ役・言質確認</span>
-                        </label>
+                        <div class="form-group">
+                            <label>AIのモデル</label>
+                            <select id="modelName">
+                                <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
+                                <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
+                                <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B (高速)</option>
+                                <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
+                                <option value="qwen/qwen3-32b">Qwen3 32B</option>
+                                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (高品質)</option>
+                                <option value="openai/gpt-oss-120b">GPT-OSS 120B (高品質)</option>
+                                <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2 Instruct</option>
+                            </select>
+                            <p class="help-text">大きなモデルほど無料API枠が少</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>インタビューAIの性格</label>
+                            <div class="persona-options">
+                                <label class="persona-option">
+                                    <input type="radio" name="personaType" value="listener" checked>
+                                    <span class="persona-label">🎧 傾聴型</span>
+                                    <span class="persona-desc">本音を引き出すカウンセラー風</span>
+                                </label>
+                                <label class="persona-option">
+                                    <input type="radio" name="personaType" value="energetic">
+                                    <span class="persona-label">🎤 盛り上げ型</span>
+                                    <span class="persona-desc">ポジティブMC風に楽しく</span>
+                                </label>
+                                <label class="persona-option">
+                                    <input type="radio" name="personaType" value="analytical">
+                                    <span class="persona-label">🔍 深掘り型</span>
+                                    <span class="persona-desc">冷静に分析・仮説検証</span>
+                                </label>
+                                <label class="persona-option">
+                                    <input type="radio" name="personaType" value="critical">
+                                    <span class="persona-label">📝 チェック型</span>
+                                    <span class="persona-desc">やや批判的に検証</span>
+                                </label>
+                                <label class="persona-option">
+                                    <input type="radio" name="personaType" value="editor">
+                                    <span class="persona-label">📋 要約型</span>
+                                    <span class="persona-desc">まとめ役・言質確認</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>深さ（1トピックあたりの質問回数）</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="depth" value="standard" checked> 標準</label>
+                                <label><input type="radio" name="depth" value="deep"> 長く</label>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>深さ（1トピックあたりの質問回数）</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="depth" value="standard" checked> 標準</label>
-                        <label><input type="radio" name="depth" value="deep"> 長く</label>
+                    <!-- === 中央カラム: 音声・認識設定 === -->
+                    <div class="settings-col">
+                        <div class="section-title">🔊 音声・認識設定</div>
+
+                        <div class="form-group">
+                            <label>音声 (ブラウザ依存)</label>
+                            <select id="voiceName">
+                                <option value="">読み込み中...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>速度 (Rate): <span id="rateVal" class="range-val">1.3</span></label>
+                            <div class="range-wrap">
+                                <span>遅</span>
+                                <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.3"
+                                    oninput="document.getElementById('rateVal').innerText = this.value">
+                                <span>速</span>
+                            </div>
+                            <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;">🔊 テスト再生</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>音声認識エンジン</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="sttMode" value="groq" checked> Groq Whisper (高精度)</label>
+                                <label><input type="radio" name="sttMode" value="webspeech"> Web Speech API (ブラウザ内蔵)</label>
+                            </div>
+                            <p class="help-text" id="stt-help">Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span></p>
+                            <button type="button" class="btn-preview" onclick="testSTT()" id="stt-test-btn">🎤 テスト録音</button>
+                            <div id="stt-test-result" class="stt-test-result" style="display:none;"></div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>音声 (ブラウザ依存)</label>
-                    <select id="voiceName">
-                        <option value="">読み込み中...</option>
-                    </select>
-                </div>
+                    <!-- === 右カラム: インタビュー内容 === -->
+                    <div class="settings-col">
+                        <div class="section-title">📝 インタビュー内容</div>
 
-                <div class="form-group">
-                    <label>速度 (Rate): <span id="rateVal" class="range-val">1.3</span></label>
-                    <div class="range-wrap">
-                        <span>遅</span>
-                        <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.3"
-                            oninput="document.getElementById('rateVal').innerText = this.value">
-                        <span>速</span>
-                    </div>
-                    <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;">🔊
-                        テスト再生</button>
-                </div>
+                        <div class="form-group">
+                            <label>タイトル <span style="color: #dc3545;">*</span></label>
+                            <input type="text" id="title" placeholder="アプリ開発に関するインタビュー" oninput="validateTitle()">
+                        </div>
 
-                <div class="form-group">
-                    <label>音声認識エンジン</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="sttMode" value="groq" checked> Groq Whisper (高精度)</label>
-                        <label><input type="radio" name="sttMode" value="webspeech"> Web Speech API (ブラウザ内蔵)</label>
-                    </div>
-                    <p class="help-text" id="stt-help">Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span></p>
-                </div>
+                        <div class="form-group">
+                            <label>
+                                事前知識・参考資料
+                                <span id="char-count" class="char-counter">0 / 3000</span>
+                            </label>
+                            <textarea id="preContext" style="height: 80px;"
+                                placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。"
+                                oninput="validateCharCount()"></textarea>
+                        </div>
 
-                <!-- ===== インタビュー内容の設定 ===== -->
-                <div class="section-title">📝 インタビュー内容</div>
-
-                <div class="form-group">
-                    <label>タイトル <span style="color: #dc3545;">*</span></label>
-                    <input type="text" id="title" placeholder="アプリ開発に関するインタビュー" oninput="validateTitle()">
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        事前知識・参考資料
-                        <span id="char-count" class="char-counter">0 / 3000</span>
-                    </label>
-                    <textarea id="preContext" style="height: 100px;"
-                        placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。"
-                        oninput="validateCharCount()"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        聞きたいことリスト
-                        <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨
-                            タイトルから生成</button>
-                        <span id="generate-status" style="font-size: 0.8em; color: #666;"></span>
-                    </label>
-                    <textarea id="topics" style="height: 180px;" placeholder="1. 自己紹介
+                        <div class="form-group" style="flex:1; display:flex; flex-direction:column;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                聞きたいことリスト
+                                <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨ タイトルから生成</button>
+                                <span id="generate-status" style="font-size: 0.75em; color: #666;"></span>
+                            </label>
+                            <textarea id="topics" style="flex:1; min-height:100px;" placeholder="1. 自己紹介
 2. どんなアプリを開発していますか
 3. 育成プログラムに応募しようと思ったきっかけ
 4. 育成プログラムを経験してどうでしたか？
 5. アプリの今後は？
 6. 来年度応募するクリエータへのメッセージ"></textarea>
-                </div>
+                        </div>
 
-                <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
-                <p id="start-help" class="help-text" style="text-align:center; color:#dc3545;">※APIキーを入力してください</p>
+                        <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
+                        <p id="start-help" class="help-text" style="text-align:center; color:#dc3545;">※APIキーを入力してください</p>
+                    </div>
+
+                </div>
             </div>
         </div>
 
-        <div class="col col-2">
-            <div class="col-header">🗂 インタビュー履歴</div>
-            <div class="col-content">
-                <div id="history-list">
-                    <div style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>
-                </div>
-                <div id="history-detail" style="display: none;">
-                    <!-- 詳細はここに動的に表示 -->
+        <!-- ===== 下段: 履歴 (2ペイン) ===== -->
+        <div class="bottom-pane">
+
+            <!-- 左: 履歴一覧 -->
+            <div class="col">
+                <div class="col-header">🗂 インタビュー履歴</div>
+                <div class="col-content">
+                    <div id="history-list">
+                        <div style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>
+                    </div>
                 </div>
             </div>
+
+            <!-- 右: 履歴詳細 -->
+            <div class="col">
+                <div class="col-header" id="detail-header-bar">📄 詳細</div>
+                <div class="col-content">
+                    <div id="history-detail">
+                        <div class="detail-placeholder">
+                            <div class="detail-placeholder-icon">👈</div>
+                            <div>履歴を選択してください</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -902,7 +954,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const btn = document.getElementById('startBtn');
             const help = document.getElementById('start-help');
 
-            // APIキーが有効、タイトルが入力済み、文字数制限内であれば押せる
             const ready = isApiValid && isTitleValid && isCharValid;
 
             btn.disabled = !ready;
@@ -1003,7 +1054,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const apiKey = document.getElementById('apiKey').value.trim();
             if (!apiKey) return alert("APIキーを入力してください");
 
-            // APIキーの保存/削除
             if (document.getElementById('saveApiKey').checked) {
                 localStorage.setItem('groqApiKey', apiKey);
             } else {
@@ -1014,7 +1064,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 apiKey: apiKey,
                 modelName: document.getElementById('modelName').value,
                 title: document.getElementById('title').value,
-                // ★ 事前知識を保存
                 context: document.getElementById('preContext').value,
                 topics: document.getElementById('topics').value.split('\n').filter(line => line.trim() !== ''),
                 depth: document.querySelector('input[name="depth"]:checked').value,
@@ -1108,6 +1157,121 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             window.speechSynthesis.speak(utterance);
         }
 
+        // --- STT テスト録音 ---
+        async function testSTT() {
+            const sttMode = document.querySelector('input[name="sttMode"]:checked').value;
+            const resultEl = document.getElementById('stt-test-result');
+            const btn = document.getElementById('stt-test-btn');
+            resultEl.style.display = 'block';
+
+            if (sttMode === 'webspeech') {
+                // Web Speech API テスト
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    resultEl.innerText = '❌ このブラウザはWeb Speech APIに対応していません';
+                    return;
+                }
+                resultEl.innerText = '🎤 話してください...';
+                btn.disabled = true;
+
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'ja-JP';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onresult = (event) => {
+                    const text = event.results[0][0].transcript;
+                    const confidence = (event.results[0][0].confidence * 100).toFixed(0);
+                    resultEl.innerText = `✅ "${text}" (信頼度: ${confidence}%)`;
+                    btn.disabled = false;
+                };
+                recognition.onerror = (event) => {
+                    if (event.error === 'no-speech') {
+                        resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                    } else if (event.error === 'network') {
+                        resultEl.innerText = '❌ ネットワークエラー。Chrome/Edgeで試してください。';
+                    } else {
+                        resultEl.innerText = `❌ エラー: ${event.error}`;
+                    }
+                    btn.disabled = false;
+                };
+                recognition.onend = () => {
+                    if (resultEl.innerText.includes('話してください')) {
+                        resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                    }
+                    btn.disabled = false;
+                };
+                recognition.start();
+            } else {
+                // Groq Whisper テスト
+                const apiKey = document.getElementById('apiKey').value.trim();
+                if (!apiKey) {
+                    resultEl.innerText = '❌ APIキーを入力してください';
+                    return;
+                }
+
+                resultEl.innerText = '🎤 録音中... (3秒間話してください)';
+                btn.disabled = true;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream);
+                    const chunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) chunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        stream.getTracks().forEach(t => t.stop());
+                        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+                        resultEl.innerText = '🔄 文字起こし中...';
+
+                        try {
+                            const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+                            const formData = new FormData();
+                            formData.append('file', blob, `test.${ext}`);
+                            formData.append('model', 'whisper-large-v3-turbo');
+                            formData.append('language', 'ja');
+                            formData.append('response_format', 'json');
+
+                            const controller = new AbortController();
+                            setTimeout(() => controller.abort(), 15000);
+
+                            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${apiKey}` },
+                                body: formData,
+                                signal: controller.signal
+                            });
+
+                            if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                            const data = await res.json();
+                            const text = data.text?.trim();
+                            if (text) {
+                                resultEl.innerText = `✅ "${text}"`;
+                            } else {
+                                resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                            }
+                        } catch (e) {
+                            resultEl.innerText = `❌ エラー: ${e.message}`;
+                        }
+                        btn.disabled = false;
+                    };
+
+                    mediaRecorder.start();
+                    setTimeout(() => {
+                        if (mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, 3000);
+                } catch (e) {
+                    resultEl.innerText = `❌ マイクアクセスエラー: ${e.message}`;
+                    btn.disabled = false;
+                }
+            }
+        }
+
         // --- DB & 履歴表示 ---
         function openDB() {
             return new Promise((resolve, reject) => {
@@ -1123,9 +1287,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 
         async function loadHistory() {
             const listEl = document.getElementById('history-list');
-            const detailEl = document.getElementById('history-detail');
-            detailEl.style.display = 'none';
-            listEl.style.display = 'block';  // 履歴リストを表示
 
             try {
                 const db = await openDB();
@@ -1147,7 +1308,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                         return;
                     }
 
-                    listEl.innerHTML = `<div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">${records.length}件の履歴</div>`;
+                    listEl.innerHTML = `<div style="font-size: 0.8em; color: #666; margin-bottom: 8px;">${records.length}件の履歴</div>`;
                     records.forEach(rec => {
                         const item = document.createElement('div');
                         item.className = 'history-item';
@@ -1171,12 +1332,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 
         function showDetail(rec) {
             selectedRecord = rec;
-            const listEl = document.getElementById('history-list');
             const detailEl = document.getElementById('history-detail');
-
-            // 履歴リストを非表示にして、詳細を表示
-            listEl.style.display = 'none';
-            detailEl.style.display = 'block';
+            const headerBar = document.getElementById('detail-header-bar');
+            headerBar.innerText = `📄 ${rec.title}`;
 
             // AIの発言インデックスを追跡
             let aiResponseIndex = 0;
@@ -1186,10 +1344,8 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 const roleClass = h.role === 'assistant' ? 'chat-ai' : 'chat-user';
                 const text = h.content;
 
-                // AIの発言の場合、プロンプト表示ボタンを追加
                 let promptBtn = '';
                 if (h.role === 'assistant' && rec.promptLog && rec.promptLog.length > 0) {
-                    // このAI発言に対応するプロンプトログを探す
                     const logEntry = rec.promptLog.find(log => log.aiResponseIndex === aiResponseIndex);
                     if (logEntry) {
                         const logIndex = rec.promptLog.indexOf(logEntry);
@@ -1201,7 +1357,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 return `<div class="chat-row ${roleClass}"><div class="chat-role">${role}${promptBtn}</div><div>${text}</div></div>`;
             }).join('');
 
-            // 設定情報のHTML（設定が保存されている場合のみ表示）
+            // 設定情報のHTML
             let settingsHtml = '';
             if (rec.settings) {
                 const s = rec.settings;
@@ -1223,7 +1379,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             }
 
             detailEl.innerHTML = `
-            <button onclick="hideDetail()" class="back-to-list">← 履歴一覧に戻る</button>
             <div class="detail-header">
                 <div class="detail-title">${rec.title}</div>
                 <div class="detail-meta">日時: ${rec.date}</div>
@@ -1238,19 +1393,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         `;
         }
 
-        function hideDetail() {
-            const listEl = document.getElementById('history-list');
-            const detailEl = document.getElementById('history-detail');
-
-            // 詳細を非表示にして、履歴リストを表示
-            detailEl.style.display = 'none';
-            listEl.style.display = 'block';
-
-            // アクティブ状態をリセット
-            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-            selectedRecord = null;
-        }
-
         async function deleteRecord(id) {
             if (!confirm('この履歴を削除しますか？\n削除すると元に戻せません。')) {
                 return;
@@ -1262,7 +1404,15 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 store.delete(id);
                 tx.oncomplete = () => {
                     selectedRecord = null;
-                    // 履歴リストを再表示して更新
+                    // 詳細をプレースホルダーに戻す
+                    const detailEl = document.getElementById('history-detail');
+                    const headerBar = document.getElementById('detail-header-bar');
+                    headerBar.innerText = '📄 詳細';
+                    detailEl.innerHTML = `
+                        <div class="detail-placeholder">
+                            <div class="detail-placeholder-icon">👈</div>
+                            <div>履歴を選択してください</div>
+                        </div>`;
                     loadHistory();
                     alert('削除しました');
                 };
@@ -1329,7 +1479,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             validateCharCount();
             validateTitle();
 
-            alert('設定をセットしました！左のフォームを確認してください。');
+            alert('設定をセットしました！');
         }
 
         loadHistory();
@@ -1345,7 +1495,6 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const modal = document.getElementById('prompt-modal');
             const body = document.getElementById('prompt-modal-body');
 
-            // 送信したメッセージ履歴を整形
             const messagesHtml = log.messages
                 .filter(m => m.role !== 'system')
                 .map(m => `<div style="margin-bottom: 5px;"><strong style="color: ${m.role === 'user' ? '#ff6b6b' : '#98fb98'};">${m.role}:</strong> ${escapeHtml(m.content.substring(0, 200))}${m.content.length > 200 ? '...' : ''}</div>`)
