@@ -130,8 +130,7 @@ my-interview-app/
 ├── README.md            # このファイル（日本語）
 ├── README_EN.md         # English README
 ├── ogp.png              # OGP画像
-├── screenshot.jpg       # スクリーンショット
-└── vercel.json          # (参考用)
+└── screenshot.jpg       # スクリーンショット
 ```
 
 ## デプロイ

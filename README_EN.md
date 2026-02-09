@@ -131,8 +131,7 @@ my-interview-app/
 ├── README.md            # Japanese README
 ├── README_EN.md         # This file (English)
 ├── ogp.png              # OGP image
-├── screenshot.jpg       # Screenshot
-└── vercel.json          # (reference)
+└── screenshot.jpg       # Screenshot
 ```
 
 ## Deployment
