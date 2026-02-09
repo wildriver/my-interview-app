@@ -372,6 +372,7 @@
             synth.cancel();
             isInterviewerSpeaking = false;
             isThinking = false;
+            stopSpeechInterruptionDetection();
             document.getElementById('skip-btn').style.display = 'none';
 
             if (!document.querySelector('.status-finishing')) {
@@ -408,6 +409,7 @@
     function stopRecognition() {
         isInterviewerSpeaking = false;
         isThinking = false;
+        stopSpeechInterruptionDetection();
         stopListening();
         synth.cancel();
         toggleVisualizer(false);
@@ -731,6 +733,56 @@ ${situationInstruction}
     const SILENCE_DURATION = 2000;
     const MAX_RECORD_DURATION = 30000;
     const MAX_SILENCE_ROUNDS = 3;
+
+    // --- 読み上げ中のユーザー音声割り込み検出 ---
+    let speechInterruptionInterval = null;
+    let userSpeechStartTime = 0;
+    const INTERRUPT_RMS_THRESHOLD = 10;  // AI読み上げ中の検出閾値（通常より高め）
+    const INTERRUPT_DURATION = 1000;     // 1秒間の継続音声で割り込み
+
+    function startSpeechInterruptionDetection() {
+        stopSpeechInterruptionDetection();
+        userSpeechStartTime = 0;
+
+        speechInterruptionInterval = setInterval(() => {
+            if (!analyser || !isInterviewerSpeaking) {
+                stopSpeechInterruptionDetection();
+                return;
+            }
+
+            analyser.getByteTimeDomainData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const v = (dataArray[i] - 128) / 128;
+                sum += v * v;
+            }
+            const rms = Math.sqrt(sum / dataArray.length) * 100;
+
+            if (rms > INTERRUPT_RMS_THRESHOLD) {
+                if (userSpeechStartTime === 0) {
+                    userSpeechStartTime = Date.now();
+                } else if (Date.now() - userSpeechStartTime > INTERRUPT_DURATION) {
+                    console.log('[STT] User voice detected during AI speech, interrupting (RMS:', rms.toFixed(1), ')');
+                    stopSpeechInterruptionDetection();
+                    synth.cancel();
+                    isInterviewerSpeaking = false;
+                    isThinking = false;
+                    document.getElementById('skip-btn').style.display = 'none';
+                    startListening();
+                }
+            } else {
+                userSpeechStartTime = 0;
+            }
+        }, 100);
+    }
+
+    function stopSpeechInterruptionDetection() {
+        if (speechInterruptionInterval) {
+            clearInterval(speechInterruptionInterval);
+            speechInterruptionInterval = null;
+        }
+        userSpeechStartTime = 0;
+    }
 
     function isHallucination(text) {
         if (!text || !text.trim()) return true;
@@ -1077,6 +1129,14 @@ ${situationInstruction}
         if (!isListening && !isInterviewerSpeaking && !isThinking) return;
         console.log('[UI] forceReply called');
 
+        // 読み上げ中なら中止
+        if (synth.speaking || synth.pending) {
+            synth.cancel();
+            isInterviewerSpeaking = false;
+            document.getElementById('skip-btn').style.display = 'none';
+        }
+        stopSpeechInterruptionDetection();
+
         if (isListening) {
             if (sttMode === 'webspeech') {
                 // Web Speech API: 停止して直接AIに依頼
@@ -1103,6 +1163,14 @@ ${situationInstruction}
         input.value = '';
 
         console.log('[UI] sendTextInput:', text);
+        // 読み上げ中なら中止
+        if (synth.speaking || synth.pending) {
+            synth.cancel();
+            isInterviewerSpeaking = false;
+            isThinking = false;
+            document.getElementById('skip-btn').style.display = 'none';
+        }
+        stopSpeechInterruptionDetection();
         stopListening();
         addMessage('user', text);
         processUserResponse(text);
@@ -1110,6 +1178,14 @@ ${situationInstruction}
 
     function requestNextTopic() {
         console.log('[UI] requestNextTopic');
+        // 読み上げ中なら中止
+        if (synth.speaking || synth.pending) {
+            synth.cancel();
+            isInterviewerSpeaking = false;
+            isThinking = false;
+            document.getElementById('skip-btn').style.display = 'none';
+        }
+        stopSpeechInterruptionDetection();
         stopListening();
         addMessage('user', '(次の話題へ)');
         processUserResponse('次の話題に移ってください');
@@ -1128,8 +1204,14 @@ ${situationInstruction}
         const utterance = new SpeechSynthesisUtterance(cleanText);
         configureUtterance(utterance);
 
+        // 読み上げ中のユーザー音声割り込み検出を開始
+        if (analyser && interviewRunning && !onComplete) {
+            startSpeechInterruptionDetection();
+        }
+
         utterance.onend = () => {
             console.log('[DEBUG] utterance.onend fired, synth.pending:', synth.pending);
+            stopSpeechInterruptionDetection();
             if(skipBtn) skipBtn.style.display = 'none';
             if (!synth.pending) {
                 isInterviewerSpeaking = false;
@@ -1143,6 +1225,7 @@ ${situationInstruction}
 
         utterance.onerror = (e) => {
             console.error('[DEBUG] utterance.onerror:', e.error);
+            stopSpeechInterruptionDetection();
         };
 
         synth.speak(utterance);
