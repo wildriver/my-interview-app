@@ -619,7 +619,7 @@ ${I18N.t('prompt_rules')}
             await saveToDB(summaryText);
         } catch (error) {
             summaryBox.innerHTML = `<span style="color:red;">${error.message}</span>`;
-            updateStatus('error', 'エラー');
+            updateStatus('error', I18N.t('status_error_short'));
             // エラー時も戻るボタンは有効化
             document.getElementById('back-btn').disabled = false;
             setButtonState("FINISHED");
@@ -1318,10 +1318,10 @@ ${I18N.t('prompt_rules')}
             entry.innerHTML = `
                 <div class="debug-timestamp">${timestamp}</div>
                 <div class="debug-status">📡 ${status}</div>
-                <div style="color: #aaa; margin-top: 8px;">System Prompt (トピック状況含む):</div>
+                <div style="color: #aaa; margin-top: 8px;">${I18N.t('prompt_system_prompt')}:</div>
                 <div class="debug-prompt">${escapeHtml(shortPrompt)}</div>
-                <div style="color: #aaa; margin-top: 8px;">📜 送信する会話履歴 (${historyCount}メッセージ):</div>
-                <div class="debug-prompt" style="color: #ff9; max-height: 120px;">${historyHtml || '<em>なし</em>'}</div>
+                <div style="color: #aaa; margin-top: 8px;">📜 ${I18N.t('prompt_messages_label')} (${historyCount} ${I18N.t('prompt_messages_unit')}):</div>
+                <div class="debug-prompt" style="color: #ff9; max-height: 120px;">${historyHtml || '<em>' + I18N.t('prompt_none') + '</em>'}</div>
                 <div class="debug-response-area"></div>
             `;
 

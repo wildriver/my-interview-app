@@ -102,6 +102,14 @@ I18N.register('ja', {
     prompt_modal_title: '🐛 プロンプト詳細',
     btn_close: '閉じる',
     prompt_not_found: 'プロンプト情報が見つかりません',
+    btn_show_prompt: '🐛 プロンプト',
+    prompt_timestamp: 'タイムスタンプ',
+    prompt_status_label: 'ステータス',
+    prompt_system_prompt: 'System Prompt',
+    prompt_messages_label: '送信した会話履歴',
+    prompt_messages_unit: 'メッセージ',
+    prompt_none: '(なし)',
+    prompt_ai_response: 'AIの応答',
 
     // JS alerts
     alert_api_key_required: 'APIキーを入力してください',
@@ -130,6 +138,9 @@ I18N.register('ja', {
     stt_no_support: '❌ このブラウザはWeb Speech APIに対応していません',
     stt_no_speech: '⚠️ 音声が検出されませんでした',
     stt_network_error: '❌ ネットワークエラー。Chrome/Edgeで試してください。',
+    stt_test_confidence: '信頼度',
+    stt_test_error: 'エラー',
+    stt_test_mic_error: 'マイクアクセスエラー',
 
     // Topic generation prompt
     topic_gen_system: `あなたは創造的なインタビュー企画者です。

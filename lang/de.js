@@ -102,6 +102,14 @@ I18N.register('de', {
     prompt_modal_title: '🐛 Prompt-Details',
     btn_close: 'Schließen',
     prompt_not_found: 'Prompt-Informationen nicht gefunden',
+    btn_show_prompt: '🐛 Prompt',
+    prompt_timestamp: 'Zeitstempel',
+    prompt_status_label: 'Status',
+    prompt_system_prompt: 'System Prompt',
+    prompt_messages_label: 'Gesendeter Nachrichtenverlauf',
+    prompt_messages_unit: 'Nachrichten',
+    prompt_none: '(keine)',
+    prompt_ai_response: 'KI-Antwort',
 
     // JS alerts
     alert_api_key_required: 'Bitte geben Sie einen API-Key ein',
@@ -130,6 +138,9 @@ I18N.register('de', {
     stt_no_support: '❌ Web Speech API wird in diesem Browser nicht unterstützt',
     stt_no_speech: '⚠️ Keine Sprache erkannt',
     stt_network_error: '❌ Netzwerkfehler. Bitte Chrome/Edge versuchen.',
+    stt_test_confidence: 'Konfidenz',
+    stt_test_error: 'Fehler',
+    stt_test_mic_error: 'Mikrofonzugriffsfehler',
 
     // Topic generation prompt
     topic_gen_system: `Sie sind ein kreativer Interview-Planer.
