@@ -80,13 +80,17 @@
             display: flex; justify-content: center; gap: 10px;
             margin-bottom: 12px; min-height: 36px;
         }
-        #skip-btn, #reply-btn {
+        #skip-btn {
             background-color: #6c757d; color: white; border: none;
             padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85em;
             cursor: pointer; display: none; transition: all 0.2s;
         }
         #skip-btn:hover { background-color: #5a6268; }
-        #reply-btn { background-color: #e67e22; }
+        #reply-btn {
+            background-color: #e67e22; color: white; border: none;
+            padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85em;
+            cursor: pointer; display: inline-block; transition: all 0.2s;
+        }
         #reply-btn:hover { background-color: #d35400; }
 
         /* テキスト入力 */
@@ -228,7 +232,6 @@
         <div id="interview-actions-wrapper" class="interview-actions" style="display:none;">
             <div id="skip-btn-container">
                 <button id="skip-btn" onclick="skipSpeech()">⏩ Skip</button>
-                <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
             </div>
 
             <div id="text-input-container" style="display:none;">
@@ -239,6 +242,7 @@
             </div>
 
             <div id="ctrl-actions" style="display:none; text-align:center;">
+                <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
                 <button id="next-topic-btn" onclick="requestNextTopic()">⏭ 次の話題へ</button>
             </div>
         </div>
@@ -316,7 +320,6 @@
         document.getElementById('ctrl-actions').style.display = 'none';
         document.getElementById('text-input-container').style.display = 'none';
         document.getElementById('skip-btn').style.display = 'none';
-        document.getElementById('reply-btn').style.display = 'none';
 
         if (state === "IDLE") {
             document.getElementById('ctrl-idle').style.display = 'block';
@@ -836,7 +839,6 @@ ${situationInstruction}
 
         updateStatus('listening', '聞いています...');
         toggleVisualizer(true);
-        document.getElementById('reply-btn').style.display = 'inline-block';
         console.log('[STT] startListeningGroq');
 
         const mimeType = getRecorderMimeType();
@@ -927,7 +929,6 @@ ${situationInstruction}
             try { mediaRecorder.stop(); } catch(e) {}
         }
         toggleVisualizer(false);
-        document.getElementById('reply-btn').style.display = 'none';
         console.log('[STT] stopListeningGroq');
     }
 
@@ -939,7 +940,6 @@ ${situationInstruction}
 
         updateStatus('listening', '聞いています...');
         toggleVisualizer(true);
-        document.getElementById('reply-btn').style.display = 'inline-block';
         console.log('[STT] startListeningWebSpeech');
 
         if (!recognition) {
@@ -1008,15 +1008,38 @@ ${situationInstruction}
         };
 
         recognition.onend = () => {
+            console.log('[STT] Web Speech onend, isListening:', isListening);
             if (isListening && interviewRunning && !isInterviewerSpeaking && !isThinking) {
-                try { recognition.start(); } catch(e) { isListening = false; }
+                // 少し待ってからリスタート（前のセッション完了を確実にする）
+                setTimeout(() => {
+                    if (isListening && interviewRunning && !isInterviewerSpeaking && !isThinking) {
+                        try { recognition.start(); } catch(e) {
+                            console.warn('[STT] Web Speech restart failed:', e.message);
+                            isListening = false;
+                            setTimeout(() => startListening(), 300);
+                        }
+                    }
+                }, 100);
             }
         };
 
         try {
-            recognition.start();
+            // 既存セッションが残っている可能性があるのでabortしてから開始
+            try { recognition.abort(); } catch(e2) {}
+            setTimeout(() => {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('[STT] Web Speech start error:', e);
+                    isListening = false;
+                    // リトライ
+                    if (interviewRunning && !isInterviewerSpeaking && !isThinking) {
+                        setTimeout(() => startListening(), 500);
+                    }
+                }
+            }, 100);
         } catch (e) {
-            console.error('[STT] Web Speech start error:', e);
+            console.error('[STT] Web Speech abort error:', e);
             isListening = false;
         }
     }
@@ -1027,7 +1050,6 @@ ${situationInstruction}
             try { recognition.stop(); } catch(e) {}
         }
         toggleVisualizer(false);
-        document.getElementById('reply-btn').style.display = 'none';
         console.log('[STT] stopListeningWebSpeech');
     }
 
@@ -1115,7 +1137,6 @@ ${situationInstruction}
             // ユーザーが「返信して」やテキスト入力で応答するのを待つ
             updateStatus('listening', '聞いています...');
             toggleVisualizer(true);
-            document.getElementById('reply-btn').style.display = 'inline-block';
             // 短い待機後にリスニング開始
             setTimeout(() => startListening(), 500);
         });
@@ -1199,7 +1220,6 @@ ${situationInstruction}
 
         const skipBtn = document.getElementById('skip-btn');
         if (skipBtn) skipBtn.style.display = 'inline-block';
-        document.getElementById('reply-btn').style.display = 'none';
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         configureUtterance(utterance);
@@ -1210,14 +1230,15 @@ ${situationInstruction}
         }
 
         utterance.onend = () => {
-            console.log('[DEBUG] utterance.onend fired, synth.pending:', synth.pending);
+            console.log('[DEBUG] utterance.onend fired, synth.pending:', synth.pending, 'isListening:', isListening);
             stopSpeechInterruptionDetection();
             if(skipBtn) skipBtn.style.display = 'none';
             if (!synth.pending) {
                 isInterviewerSpeaking = false;
                 isThinking = false;
                 if (onComplete) { onComplete(); return; }
-                if(!document.querySelector('.status-error') && !document.querySelector('.status-finishing')){
+                // isListeningが既にtrueなら、skipSpeech等で既にstartListeningが呼ばれているので二重呼び出しを防ぐ
+                if (!isListening && !document.querySelector('.status-error') && !document.querySelector('.status-finishing')){
                     startListening();
                 }
             }
