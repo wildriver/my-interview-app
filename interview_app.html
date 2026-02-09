@@ -231,7 +231,7 @@
 
         <div id="interview-actions-wrapper" class="interview-actions" style="display:none;">
             <div id="skip-btn-container">
-                <button id="skip-btn" onclick="skipSpeech()">⏩ Skip</button>
+                <button id="skip-btn" onclick="skipSpeech()">⏩ 読み上げSkip</button>
             </div>
 
             <div id="text-input-container" style="display:none;">
@@ -1245,7 +1245,12 @@ ${situationInstruction}
         };
 
         utterance.onerror = (e) => {
-            console.error('[DEBUG] utterance.onerror:', e.error);
+            // synth.cancel()による"interrupted"は正常動作なのでwarnレベルに
+            if (e.error === 'interrupted') {
+                console.log('[DEBUG] utterance interrupted (skip/cancel)');
+            } else {
+                console.error('[DEBUG] utterance.onerror:', e.error);
+            }
             stopSpeechInterruptionDetection();
         };
 

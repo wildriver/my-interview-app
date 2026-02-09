@@ -459,6 +459,65 @@
             color: #666;
         }
 
+        /* モデル選択テーブル */
+        .model-options {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 4px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .model-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .model-option:hover {
+            background: #f5f5f5;
+        }
+
+        .model-option:has(input:checked) {
+            background: #e8f4fd;
+            border-color: #007bff;
+        }
+
+        .model-option input {
+            margin: 0;
+        }
+
+        .model-name {
+            flex: 1;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .model-tag {
+            font-size: 0.65em;
+            color: #fff;
+            padding: 1px 5px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .tag-fast { background: #28a745; }
+        .tag-mid { background: #17a2b8; }
+        .tag-quality { background: #6f42c1; }
+
+        .model-limit {
+            font-size: 0.75em;
+            color: #888;
+            min-width: 70px;
+            text-align: right;
+        }
+
         /* プロンプト表示ボタン */
         .btn-show-prompt {
             background: #6c757d;
@@ -644,18 +703,58 @@
                         </div>
 
                         <div class="form-group">
-                            <label>AIのモデル</label>
-                            <select id="modelName">
-                                <option value="llama-3.1-8b-instant" selected>Llama 3.1 8B Instant (最速)</option>
-                                <option value="openai/gpt-oss-20b">GPT-OSS 20B (高速)</option>
-                                <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B (高速)</option>
-                                <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
-                                <option value="qwen/qwen3-32b">Qwen3 32B</option>
-                                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (高品質)</option>
-                                <option value="openai/gpt-oss-120b">GPT-OSS 120B (高品質)</option>
-                                <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2 Instruct</option>
-                            </select>
-                            <p class="help-text">大きなモデルほど無料API枠が少</p>
+                            <label>AIのモデル
+                                <button type="button" class="btn-generate" onclick="checkRateLimits()" id="checkLimitsBtn">🔄 残量チェック</button>
+                                <span id="limits-status" style="font-size: 0.75em; color: #666;"></span>
+                            </label>
+                            <div class="model-options">
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="llama-3.1-8b-instant" checked>
+                                    <span class="model-name">Llama 3.1 8B Instant</span>
+                                    <span class="model-tag tag-fast">最速</span>
+                                    <span class="model-limit" id="limit-0"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="openai/gpt-oss-20b">
+                                    <span class="model-name">GPT-OSS 20B</span>
+                                    <span class="model-tag tag-mid">高速</span>
+                                    <span class="model-limit" id="limit-1"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="meta-llama/llama-4-maverick-17b-128e-instruct">
+                                    <span class="model-name">Llama 4 Maverick 17B</span>
+                                    <span class="model-tag tag-mid">高速</span>
+                                    <span class="model-limit" id="limit-2"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="meta-llama/llama-4-scout-17b-16e-instruct">
+                                    <span class="model-name">Llama 4 Scout 17B</span>
+                                    <span class="model-limit" id="limit-3"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="qwen/qwen3-32b">
+                                    <span class="model-name">Qwen3 32B</span>
+                                    <span class="model-limit" id="limit-4"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="llama-3.3-70b-versatile">
+                                    <span class="model-name">Llama 3.3 70B</span>
+                                    <span class="model-tag tag-quality">高品質</span>
+                                    <span class="model-limit" id="limit-5"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="openai/gpt-oss-120b">
+                                    <span class="model-name">GPT-OSS 120B</span>
+                                    <span class="model-tag tag-quality">高品質</span>
+                                    <span class="model-limit" id="limit-6"></span>
+                                </label>
+                                <label class="model-option">
+                                    <input type="radio" name="modelName" value="moonshotai/kimi-k2-instruct-0905">
+                                    <span class="model-name">Kimi K2 Instruct</span>
+                                    <span class="model-limit" id="limit-7"></span>
+                                </label>
+                            </div>
+                            <p class="help-text">大きなモデルほど無料API枠が少ない。残量チェックは各モデルに1リクエスト消費します。</p>
                         </div>
 
                         <div class="form-group">
@@ -869,6 +968,102 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             editor: '📋 要約型'
         };
 
+        // モデルリスト（残量チェック用）
+        const MODEL_IDS = [
+            'llama-3.1-8b-instant',
+            'openai/gpt-oss-20b',
+            'meta-llama/llama-4-maverick-17b-128e-instruct',
+            'meta-llama/llama-4-scout-17b-16e-instruct',
+            'qwen/qwen3-32b',
+            'llama-3.3-70b-versatile',
+            'openai/gpt-oss-120b',
+            'moonshotai/kimi-k2-instruct-0905'
+        ];
+
+        function getSelectedModel() {
+            return document.querySelector('input[name="modelName"]:checked')?.value || 'llama-3.1-8b-instant';
+        }
+
+        function formatNum(n) {
+            if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+            if (n >= 1000) return Math.round(n / 1000) + 'K';
+            return n.toLocaleString();
+        }
+
+        async function checkRateLimits() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('APIキーを入力してください');
+                return;
+            }
+
+            const btn = document.getElementById('checkLimitsBtn');
+            const statusEl = document.getElementById('limits-status');
+            btn.disabled = true;
+            statusEl.innerText = 'チェック中...';
+
+            MODEL_IDS.forEach((_, i) => {
+                const el = document.getElementById(`limit-${i}`);
+                if (el) el.innerHTML = '⏳';
+            });
+
+            const results = await Promise.allSettled(
+                MODEL_IDS.map(async (modelId) => {
+                    try {
+                        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: modelId,
+                                messages: [{ role: "user", content: "hi" }],
+                                max_tokens: 1
+                            })
+                        });
+                        return {
+                            ok: res.ok,
+                            status: res.status,
+                            remainingRequests: res.headers.get('x-ratelimit-remaining-requests'),
+                            limitRequests: res.headers.get('x-ratelimit-limit-requests'),
+                            remainingTokens: res.headers.get('x-ratelimit-remaining-tokens'),
+                            limitTokens: res.headers.get('x-ratelimit-limit-tokens'),
+                        };
+                    } catch (e) {
+                        return { ok: false, status: 0, error: e.message };
+                    }
+                })
+            );
+
+            results.forEach((result, i) => {
+                const el = document.getElementById(`limit-${i}`);
+                if (!el) return;
+
+                if (result.status === 'fulfilled' && result.value.ok) {
+                    const r = result.value;
+                    if (r.remainingRequests !== null) {
+                        const remaining = parseInt(r.remainingRequests);
+                        const limit = parseInt(r.limitRequests);
+                        const pct = limit > 0 ? remaining / limit : 0;
+                        const color = pct > 0.5 ? '#28a745' : pct > 0.1 ? '#e67e22' : '#dc3545';
+                        el.innerHTML = `<span style="color:${color};font-weight:bold;">${formatNum(remaining)}</span><span style="color:#aaa;">/${formatNum(limit)}</span>`;
+                    } else {
+                        el.innerHTML = '<span style="color:#28a745;">✅</span>';
+                    }
+                } else if (result.status === 'fulfilled' && result.value.status === 429) {
+                    el.innerHTML = '<span style="color:#dc3545;font-weight:bold;">制限中</span>';
+                } else if (result.status === 'fulfilled') {
+                    el.innerHTML = `<span style="color:#999;" title="HTTP ${result.value.status}">N/A</span>`;
+                } else {
+                    el.innerHTML = '<span style="color:#dc3545;">❌</span>';
+                }
+            });
+
+            btn.disabled = false;
+            statusEl.innerText = '';
+        }
+
         // 選択された人格タイプを取得
         function getSelectedPersonaType() {
             return document.querySelector('input[name="personaType"]:checked')?.value || 'listener';
@@ -978,7 +1173,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const title = document.getElementById('title').value.trim();
             const personaType = getSelectedPersonaType();
             const personaLabel = PERSONA_LABELS[personaType];
-            const modelName = document.getElementById('modelName').value;
+            const modelName = getSelectedModel();
 
             if (!apiKey) {
                 alert('APIキーを入力してください');
@@ -1062,7 +1257,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 
             const config = {
                 apiKey: apiKey,
-                modelName: document.getElementById('modelName').value,
+                modelName: getSelectedModel(),
                 title: document.getElementById('title').value,
                 context: document.getElementById('preContext').value,
                 topics: document.getElementById('topics').value.split('\n').filter(line => line.trim() !== ''),
@@ -1442,14 +1637,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             }
 
             // モデル選択
-            const modelSelect = document.getElementById('modelName');
             if (s.modelName) {
-                for (let opt of modelSelect.options) {
-                    if (opt.value === s.modelName) {
-                        opt.selected = true;
-                        break;
-                    }
-                }
+                const modelRadio = document.querySelector(`input[name="modelName"][value="${s.modelName}"]`);
+                if (modelRadio) modelRadio.checked = true;
             }
 
             // 深さ
