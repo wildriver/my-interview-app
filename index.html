@@ -627,6 +627,28 @@
             border: 1px solid #e9ecef;
         }
 
+        /* Language selector */
+        .lang-selector {
+            display: inline-flex;
+            gap: 4px;
+            float: right;
+        }
+        .lang-btn {
+            padding: 3px 10px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { background: #f0f0f0; }
+        .lang-btn.active {
+            background: #f55036;
+            color: white;
+            border-color: #f55036;
+        }
+
         @media (max-width: 1100px) {
             .layout-container {
                 grid-template-rows: auto;
@@ -670,8 +692,8 @@
     <div id="prompt-modal" class="prompt-modal" onclick="closePromptModal(event)">
         <div class="prompt-modal-content" onclick="event.stopPropagation()">
             <div class="prompt-modal-header">
-                <span class="prompt-modal-title">🐛 プロンプト詳細</span>
-                <button class="prompt-modal-close" onclick="closePromptModal()">閉じる</button>
+                <span class="prompt-modal-title" data-i18n="prompt_modal_title">🐛 プロンプト詳細</span>
+                <button class="prompt-modal-close" onclick="closePromptModal()" data-i18n="btn_close">閉じる</button>
             </div>
             <div id="prompt-modal-body"></div>
         </div>
@@ -681,13 +703,16 @@
 
         <!-- ===== 上段: 設定 (3カラム) ===== -->
         <div class="col">
-            <div class="col-header">🛠 インタビュー設定</div>
+            <div class="col-header">
+                <span data-i18n="settings_header">🛠 インタビュー設定</span>
+                <div class="lang-selector" id="lang-selector"></div>
+            </div>
             <div class="col-content">
                 <div class="settings-grid">
 
                     <!-- === 左カラム: AIの設定 === -->
                     <div class="settings-col">
-                        <div class="section-title">🔑 API・モデル設定</div>
+                        <div class="section-title" data-i18n="section_api">🔑 API・モデル設定</div>
 
                         <div class="form-group">
                             <label>
@@ -711,19 +736,19 @@
                                 <label class="model-option">
                                     <input type="radio" name="modelName" value="llama-3.1-8b-instant" checked>
                                     <span class="model-name">Llama 3.1 8B Instant</span>
-                                    <span class="model-tag tag-fast">最速</span>
+                                    <span class="model-tag tag-fast" data-i18n="tag_fastest">最速</span>
                                     <span class="model-limit" id="limit-0"></span>
                                 </label>
                                 <label class="model-option">
                                     <input type="radio" name="modelName" value="openai/gpt-oss-20b">
                                     <span class="model-name">GPT-OSS 20B</span>
-                                    <span class="model-tag tag-mid">高速</span>
+                                    <span class="model-tag tag-mid" data-i18n="tag_fast">高速</span>
                                     <span class="model-limit" id="limit-1"></span>
                                 </label>
                                 <label class="model-option">
                                     <input type="radio" name="modelName" value="meta-llama/llama-4-maverick-17b-128e-instruct">
                                     <span class="model-name">Llama 4 Maverick 17B</span>
-                                    <span class="model-tag tag-mid">高速</span>
+                                    <span class="model-tag tag-mid" data-i18n="tag_fast">高速</span>
                                     <span class="model-limit" id="limit-2"></span>
                                 </label>
                                 <label class="model-option">
@@ -739,13 +764,13 @@
                                 <label class="model-option">
                                     <input type="radio" name="modelName" value="llama-3.3-70b-versatile">
                                     <span class="model-name">Llama 3.3 70B</span>
-                                    <span class="model-tag tag-quality">高品質</span>
+                                    <span class="model-tag tag-quality" data-i18n="tag_quality">高品質</span>
                                     <span class="model-limit" id="limit-5"></span>
                                 </label>
                                 <label class="model-option">
                                     <input type="radio" name="modelName" value="openai/gpt-oss-120b">
                                     <span class="model-name">GPT-OSS 120B</span>
-                                    <span class="model-tag tag-quality">高品質</span>
+                                    <span class="model-tag tag-quality" data-i18n="tag_quality">高品質</span>
                                     <span class="model-limit" id="limit-6"></span>
                                 </label>
                                 <label class="model-option">
@@ -760,49 +785,49 @@
 
                     <!-- === 中央カラム: AIインタビューア設定 === -->
                     <div class="settings-col">
-                        <div class="section-title">🎙 AIインタビューア設定</div>
+                        <div class="section-title" data-i18n="section_interviewer">🎙 AIインタビューア設定</div>
 
                         <div class="form-group">
-                            <label>インタビューAIの性格</label>
+                            <label data-i18n="label_persona">インタビューAIの性格</label>
                             <div class="persona-options">
                                 <label class="persona-option">
                                     <input type="radio" name="personaType" value="listener" checked>
-                                    <span class="persona-label">🎧 傾聴型</span>
-                                    <span class="persona-desc">本音を引き出すカウンセラー風</span>
+                                    <span class="persona-label" data-i18n="persona_listener_label">🎧 傾聴型</span>
+                                    <span class="persona-desc" data-i18n="persona_listener_desc">本音を引き出すカウンセラー風</span>
                                 </label>
                                 <label class="persona-option">
                                     <input type="radio" name="personaType" value="energetic">
-                                    <span class="persona-label">🎤 盛り上げ型</span>
-                                    <span class="persona-desc">ポジティブMC風に楽しく</span>
+                                    <span class="persona-label" data-i18n="persona_energetic_label">🎤 盛り上げ型</span>
+                                    <span class="persona-desc" data-i18n="persona_energetic_desc">ポジティブMC風に楽しく</span>
                                 </label>
                                 <label class="persona-option">
                                     <input type="radio" name="personaType" value="analytical">
-                                    <span class="persona-label">🔍 深掘り型</span>
-                                    <span class="persona-desc">冷静に分析・仮説検証</span>
+                                    <span class="persona-label" data-i18n="persona_analytical_label">🔍 深掘り型</span>
+                                    <span class="persona-desc" data-i18n="persona_analytical_desc">冷静に分析・仮説検証</span>
                                 </label>
                                 <label class="persona-option">
                                     <input type="radio" name="personaType" value="critical">
-                                    <span class="persona-label">📝 チェック型</span>
-                                    <span class="persona-desc">やや批判的に検証</span>
+                                    <span class="persona-label" data-i18n="persona_critical_label">📝 チェック型</span>
+                                    <span class="persona-desc" data-i18n="persona_critical_desc">やや批判的に検証</span>
                                 </label>
                                 <label class="persona-option">
                                     <input type="radio" name="personaType" value="editor">
-                                    <span class="persona-label">📋 要約型</span>
-                                    <span class="persona-desc">まとめ役・言質確認</span>
+                                    <span class="persona-label" data-i18n="persona_editor_label">📋 要約型</span>
+                                    <span class="persona-desc" data-i18n="persona_editor_desc">まとめ役・言質確認</span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>深さ（1トピックあたりの質問回数）</label>
+                            <label data-i18n="label_depth">深さ（1トピックあたりの質問回数）</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="depth" value="standard" checked> 標準</label>
-                                <label><input type="radio" name="depth" value="deep"> 長く</label>
+                                <label><input type="radio" name="depth" value="standard" checked> <span data-i18n="depth_standard">標準</span></label>
+                                <label><input type="radio" name="depth" value="deep"> <span data-i18n="depth_deep">長く</span></label>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>音声 (ブラウザ依存)</label>
+                            <label data-i18n="label_voice">音声 (ブラウザ依存)</label>
                             <select id="voiceName">
                                 <option value="">読み込み中...</option>
                             </select>
@@ -816,43 +841,43 @@
                                     oninput="document.getElementById('rateVal').innerText = this.value">
                                 <span>速</span>
                             </div>
-                            <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;">🔊 テスト再生</button>
+                            <button type="button" class="btn-preview" onclick="previewVoice()" style="margin-top:5px;" data-i18n="btn_test_voice">🔊 テスト再生</button>
                         </div>
 
                         <div class="form-group">
-                            <label>音声認識エンジン</label>
+                            <label data-i18n="label_stt">音声認識エンジン</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="sttMode" value="groq" checked> Groq Whisper (高精度)</label>
-                                <label><input type="radio" name="sttMode" value="webspeech"> Web Speech API (ブラウザ内蔵)</label>
+                                <label><input type="radio" name="sttMode" value="groq" checked> <span data-i18n="stt_groq">Groq Whisper (高精度)</span></label>
+                                <label><input type="radio" name="sttMode" value="webspeech"> <span data-i18n="stt_webspeech">Web Speech API (ブラウザ内蔵)</span></label>
                             </div>
                             <p class="help-text" id="stt-help">Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span></p>
-                            <button type="button" class="btn-preview" onclick="testSTT()" id="stt-test-btn">🎤 テスト録音</button>
+                            <button type="button" class="btn-preview" onclick="testSTT()" id="stt-test-btn" data-i18n="btn_test_stt">🎤 テスト録音</button>
                             <div id="stt-test-result" class="stt-test-result" style="display:none;"></div>
                         </div>
                     </div>
 
                     <!-- === 右カラム: インタビュー内容 === -->
                     <div class="settings-col">
-                        <div class="section-title">📝 インタビュー内容</div>
+                        <div class="section-title" data-i18n="section_content">📝 インタビュー内容</div>
 
                         <div class="form-group">
-                            <label>タイトル <span style="color: #dc3545;">*</span></label>
-                            <input type="text" id="title" placeholder="アプリ開発に関するインタビュー" oninput="validateTitle()">
+                            <label><span data-i18n="label_title">タイトル</span> <span style="color: #dc3545;">*</span></label>
+                            <input type="text" id="title" placeholder="アプリ開発に関するインタビュー" data-i18n-ph="ph_title" oninput="validateTitle()">
                         </div>
 
                         <div class="form-group">
                             <label>
-                                事前知識・参考資料
+                                <span data-i18n="label_context">事前知識・参考資料</span>
                                 <span id="char-count" class="char-counter">0 / 3000</span>
                             </label>
                             <textarea id="preContext" style="height: 80px;"
-                                placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。"
+                                placeholder="インタビューの前提となる知識、参考テキスト、自身のプロフィールなどを入力してください。" data-i18n-ph="ph_context"
                                 oninput="validateCharCount()"></textarea>
                         </div>
 
                         <div class="form-group" style="flex:1; display:flex; flex-direction:column;">
                             <label style="display: flex; align-items: center; gap: 8px;">
-                                聞きたいことリスト
+                                <span data-i18n="label_topics">聞きたいことリスト</span>
                                 <button type="button" class="btn-generate" onclick="generateTopics()" id="generateBtn">✨ タイトルから生成</button>
                                 <span id="generate-status" style="font-size: 0.75em; color: #666;"></span>
                             </label>
@@ -864,7 +889,7 @@
 6. 来年度応募するクリエータへのメッセージ"></textarea>
                         </div>
 
-                        <button id="startBtn" class="btn" onclick="saveAndStart()" disabled>開始する</button>
+                        <button id="startBtn" class="btn" onclick="saveAndStart()" disabled data-i18n="btn_start">開始する</button>
                         <p id="start-help" class="help-text" style="text-align:center; color:#dc3545;">※APIキーを入力してください</p>
                     </div>
 
@@ -877,7 +902,7 @@
 
             <!-- 左: 履歴一覧 -->
             <div class="col">
-                <div class="col-header">🗂 インタビュー履歴</div>
+                <div class="col-header" data-i18n="history_header">🗂 インタビュー履歴</div>
                 <div class="col-content">
                     <div id="history-list">
                         <div style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>
@@ -887,7 +912,7 @@
 
             <!-- 右: 履歴詳細 -->
             <div class="col">
-                <div class="col-header" id="detail-header-bar">📄 詳細</div>
+                <div class="col-header" id="detail-header-bar" data-i18n="detail_header">📄 詳細</div>
                 <div class="col-content">
                     <div id="history-detail">
                         <div class="detail-placeholder">
@@ -902,6 +927,10 @@
 
     </div>
 
+    <script src="i18n.js"></script>
+    <script src="lang/ja.js"></script>
+    <script src="lang/en.js"></script>
+    <script src="lang/de.js"></script>
     <script>
         // AI人格プロンプト定義
         const PERSONA_PROMPTS = {
@@ -993,14 +1022,14 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         async function checkRateLimits() {
             const apiKey = document.getElementById('apiKey').value.trim();
             if (!apiKey) {
-                alert('APIキーを入力してください');
+                alert(I18N.t('alert_api_key_required'));
                 return;
             }
 
             const btn = document.getElementById('checkLimitsBtn');
             const statusEl = document.getElementById('limits-status');
             btn.disabled = true;
-            statusEl.innerText = 'チェック中...';
+            statusEl.innerText = I18N.t('status_rate_checking');
 
             MODEL_IDS.forEach((_, i) => {
                 const el = document.getElementById(`limit-${i}`);
@@ -1052,7 +1081,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                         el.innerHTML = '<span style="color:#28a745;">✅</span>';
                     }
                 } else if (result.status === 'fulfilled' && result.value.status === 429) {
-                    el.innerHTML = '<span style="color:#dc3545;font-weight:bold;">制限中</span>';
+                    el.innerHTML = `<span style="color:#dc3545;font-weight:bold;">${I18N.t('status_rate_limited')}</span>`;
                 } else if (result.status === 'fulfilled') {
                     el.innerHTML = `<span style="color:#999;" title="HTTP ${result.value.status}">N/A</span>`;
                 } else {
@@ -1069,9 +1098,15 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             return document.querySelector('input[name="personaType"]:checked')?.value || 'listener';
         }
 
-        // 選択された人格のプロンプトを取得
+        // 選択された人格のプロンプトを取得（I18N対応）
         function getSelectedPersonaPrompt() {
-            return PERSONA_PROMPTS[getSelectedPersonaType()];
+            const type = getSelectedPersonaType();
+            return I18N.t(`persona_${type}_prompt`);
+        }
+
+        // 人格ラベルを取得（I18N対応）
+        function getPersonaLabel(type) {
+            return I18N.t(`persona_${type}_label`);
         }
 
         let isApiValid = false;
@@ -1121,7 +1156,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             }
 
             statusEl.className = "status-indicator status-loading";
-            statusEl.innerText = "確認中...";
+            statusEl.innerText = I18N.t('status_checking');
 
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/models", {
@@ -1130,16 +1165,16 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
 
                 if (res.ok) {
                     statusEl.className = "status-indicator status-ok";
-                    statusEl.innerText = "✅ 有効";
+                    statusEl.innerText = I18N.t('status_valid');
                     isApiValid = true;
                 } else {
                     statusEl.className = "status-indicator status-err";
-                    statusEl.innerText = "❌ 無効";
+                    statusEl.innerText = I18N.t('status_invalid');
                     isApiValid = false;
                 }
             } catch (e) {
                 statusEl.className = "status-indicator status-err";
-                statusEl.innerText = "❌ エラー";
+                statusEl.innerText = I18N.t('status_error_short');
                 isApiValid = false;
             }
             updateStartButton();
@@ -1154,13 +1189,13 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             btn.disabled = !ready;
 
             if (!isApiValid) {
-                help.innerText = "※有効なAPIキーを入力してください";
+                help.innerText = I18N.t('help_api_key');
                 help.style.display = 'block';
             } else if (!isTitleValid) {
-                help.innerText = "※インタビュータイトルを入力してください";
+                help.innerText = I18N.t('help_title_required');
                 help.style.display = 'block';
             } else if (!isCharValid) {
-                help.innerText = "※事前知識の文字数が上限を超えています";
+                help.innerText = I18N.t('help_char_over');
                 help.style.display = 'block';
             } else {
                 help.style.display = 'none';
@@ -1172,15 +1207,15 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const apiKey = document.getElementById('apiKey').value.trim();
             const title = document.getElementById('title').value.trim();
             const personaType = getSelectedPersonaType();
-            const personaLabel = PERSONA_LABELS[personaType];
+            const personaLabel = getPersonaLabel(personaType);
             const modelName = getSelectedModel();
 
             if (!apiKey) {
-                alert('APIキーを入力してください');
+                alert(I18N.t('alert_api_key_required'));
                 return;
             }
             if (!title) {
-                alert('タイトルを入力してください');
+                alert(I18N.t('alert_title_required'));
                 return;
             }
 
@@ -1188,22 +1223,10 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             const statusEl = document.getElementById('generate-status');
 
             btn.disabled = true;
-            statusEl.innerText = '生成中...';
+            statusEl.innerText = I18N.t('status_generating');
 
-            const systemPrompt = `あなたは創造的なインタビュー企画者です。
-与えられたインタビュータイトルから、興味深い質問トピックを10個生成してください。
-
-インタビュアーのスタイル：${personaLabel}
-
-ルール：
-- 基本的な質問から始め、徐々に深い質問へ
-- タイトルから直接連想される質問だけでなく、創造的・意外性のある質問も含める
-- 相手の経験、感情、考え、将来の展望など多角的な視点から
-- 各トピックは簡潔に（1行で）
-- 番号付きリストで出力（1. 2. 3. ...）
-- 余計な説明は不要、リストのみ出力`;
-
-            const userPrompt = `インタビュータイトル：「${title}」\n\nこのインタビューで聞くべき質問トピックを10個、創造的に生成してください。`;
+            const systemPrompt = I18N.t('topic_gen_system').replace('{personaLabel}', personaLabel);
+            const userPrompt = I18N.t('topic_gen_user').replace('{title}', title);
 
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -1232,13 +1255,13 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 const generatedText = data.choices[0].message.content;
 
                 document.getElementById('topics').value = generatedText;
-                statusEl.innerText = '✅ 生成完了';
+                statusEl.innerText = I18N.t('status_generated');
                 setTimeout(() => { statusEl.innerText = ''; }, 2000);
 
             } catch (e) {
                 console.error('Generate Error:', e);
-                statusEl.innerText = '❌ エラー';
-                alert('生成に失敗しました: ' + e.message);
+                statusEl.innerText = I18N.t('status_error_short');
+                alert(I18N.t('alert_generate_failed') + e.message);
             } finally {
                 btn.disabled = false;
             }
@@ -1247,7 +1270,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         // --- 設定保存と開始 ---
         function saveAndStart() {
             const apiKey = document.getElementById('apiKey').value.trim();
-            if (!apiKey) return alert("APIキーを入力してください");
+            if (!apiKey) return alert(I18N.t('alert_api_key_required'));
 
             if (document.getElementById('saveApiKey').checked) {
                 localStorage.setItem('groqApiKey', apiKey);
@@ -1268,7 +1291,8 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 volume: 1.0,
                 personaType: getSelectedPersonaType(),
                 persona: getSelectedPersonaPrompt(),
-                sttMode: document.querySelector('input[name="sttMode"]:checked').value
+                sttMode: document.querySelector('input[name="sttMode"]:checked').value,
+                language: I18N.currentLang
             };
 
             localStorage.setItem('interviewConfig', JSON.stringify(config));
@@ -1280,18 +1304,20 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             if (typeof speechSynthesis === 'undefined') return;
             const voices = speechSynthesis.getVoices();
             const voiceSelect = document.getElementById('voiceName');
-            const jaVoices = voices.filter(v => v.lang.includes('ja') || v.lang.includes('JP'));
+            const langCode = I18N.speechLang.split('-')[0]; // 'ja', 'en', 'de'
+            const langRegion = I18N.speechLang.split('-')[1] || ''; // 'JP', 'US', 'DE'
+            const filteredVoices = voices.filter(v => v.lang.includes(langCode) || (langRegion && v.lang.includes(langRegion)));
             voiceSelect.innerHTML = '';
-            if (jaVoices.length === 0) {
+            if (filteredVoices.length === 0) {
                 const option = document.createElement('option');
-                option.text = "日本語音声なし";
+                option.text = I18N.t('no_voice_available');
                 voiceSelect.add(option); return;
             }
-            jaVoices.forEach((voice) => {
+            filteredVoices.forEach((voice) => {
                 const option = document.createElement('option');
                 option.textContent = `${voice.name} (${voice.lang})`;
                 option.value = voice.name;
-                if (voice.name === 'Google 日本語') option.selected = true;
+                if (voice.name.includes('Google') && voice.lang.startsWith(langCode)) option.selected = true;
                 voiceSelect.appendChild(option);
             });
         }
@@ -1315,9 +1341,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             radio.addEventListener('change', function() {
                 const help = document.getElementById('stt-help');
                 if (this.value === 'groq') {
-                    help.innerHTML = 'Groq Whisper: 高精度な日本語認識。<span style="color:#e67e22;">APIクレジットを消費します。</span>';
+                    help.innerHTML = I18N.t('stt_help_groq');
                 } else {
-                    help.innerHTML = 'Web Speech API: ブラウザ内蔵の音声認識。無料ですが、ネットワーク接続が必要です（Chrome/Edge）。';
+                    help.innerHTML = I18N.t('stt_help_webspeech');
                 }
             });
         });
@@ -1342,9 +1368,9 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         function previewVoice() {
             const voiceName = document.getElementById('voiceName').value;
             const rate = parseFloat(document.getElementById('rate').value);
-            if (!voiceName) return alert("音声が読み込まれていません");
+            if (!voiceName) return alert(I18N.t('alert_voice_not_loaded'));
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance("今日はインタビューよろしくお願いします！");
+            const utterance = new SpeechSynthesisUtterance(I18N.t('voice_test_text'));
             utterance.rate = rate; utterance.volume = 1.0; utterance.pitch = 1.0;
             const voices = window.speechSynthesis.getVoices();
             const selectedVoice = voices.find(v => v.name === voiceName);
@@ -1363,14 +1389,14 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 // Web Speech API テスト
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRecognition) {
-                    resultEl.innerText = '❌ このブラウザはWeb Speech APIに対応していません';
+                    resultEl.innerText = I18N.t('stt_no_support');
                     return;
                 }
-                resultEl.innerText = '🎤 話してください...';
+                resultEl.innerText = I18N.t('stt_test_speak');
                 btn.disabled = true;
 
                 const recognition = new SpeechRecognition();
-                recognition.lang = 'ja-JP';
+                recognition.lang = I18N.speechLang;
                 recognition.continuous = false;
                 recognition.interimResults = false;
 
@@ -1382,17 +1408,17 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 };
                 recognition.onerror = (event) => {
                     if (event.error === 'no-speech') {
-                        resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                        resultEl.innerText = I18N.t('stt_no_speech');
                     } else if (event.error === 'network') {
-                        resultEl.innerText = '❌ ネットワークエラー。Chrome/Edgeで試してください。';
+                        resultEl.innerText = I18N.t('stt_network_error');
                     } else {
                         resultEl.innerText = `❌ エラー: ${event.error}`;
                     }
                     btn.disabled = false;
                 };
                 recognition.onend = () => {
-                    if (resultEl.innerText.includes('話してください')) {
-                        resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                    if (resultEl.innerText.includes('🎤')) {
+                        resultEl.innerText = I18N.t('stt_no_speech');
                     }
                     btn.disabled = false;
                 };
@@ -1405,7 +1431,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                     return;
                 }
 
-                resultEl.innerText = '🎤 録音中... (3秒間話してください)';
+                resultEl.innerText = I18N.t('stt_test_recording');
                 btn.disabled = true;
 
                 try {
@@ -1420,14 +1446,14 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                     mediaRecorder.onstop = async () => {
                         stream.getTracks().forEach(t => t.stop());
                         const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
-                        resultEl.innerText = '🔄 文字起こし中...';
+                        resultEl.innerText = I18N.t('stt_test_transcribing');
 
                         try {
                             const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('ogg') ? 'ogg' : 'webm';
                             const formData = new FormData();
                             formData.append('file', blob, `test.${ext}`);
                             formData.append('model', 'whisper-large-v3-turbo');
-                            formData.append('language', 'ja');
+                            formData.append('language', I18N.whisperLang);
                             formData.append('response_format', 'json');
 
                             const controller = new AbortController();
@@ -1446,7 +1472,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                             if (text) {
                                 resultEl.innerText = `✅ "${text}"`;
                             } else {
-                                resultEl.innerText = '⚠️ 音声が検出されませんでした';
+                                resultEl.innerText = I18N.t('stt_no_speech');
                             }
                         } catch (e) {
                             resultEl.innerText = `❌ エラー: ${e.message}`;
@@ -1497,13 +1523,13 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                         listEl.innerHTML = `
                         <div class="history-empty">
                             <div class="history-empty-icon">📭</div>
-                            <div>まだインタビュー履歴がありません</div>
-                            <div style="font-size: 0.85em; margin-top: 5px;">インタビューを完了すると、ここに表示されます</div>
+                            <div>${I18N.t('history_empty')}</div>
+                            <div style="font-size: 0.85em; margin-top: 5px;">${I18N.t('history_empty_sub')}</div>
                         </div>`;
                         return;
                     }
 
-                    listEl.innerHTML = `<div style="font-size: 0.8em; color: #666; margin-bottom: 8px;">${records.length}件の履歴</div>`;
+                    listEl.innerHTML = `<div style="font-size: 0.8em; color: #666; margin-bottom: 8px;">${I18N.t('history_count').replace('${n}', records.length)}</div>`;
                     records.forEach(rec => {
                         const item = document.createElement('div');
                         item.className = 'history-item';
@@ -1518,7 +1544,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 };
             } catch (e) {
                 console.error(e);
-                listEl.innerHTML = "DBエラー";
+                listEl.innerHTML = I18N.t('db_error');
             }
         }
 
@@ -1556,40 +1582,40 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             let settingsHtml = '';
             if (rec.settings) {
                 const s = rec.settings;
-                const topicsText = rec.topics && rec.topics.length > 0 ? rec.topics.join(' / ') : '不明';
+                const topicsText = rec.topics && rec.topics.length > 0 ? rec.topics.join(' / ') : I18N.t('detail_unknown');
                 const topicsDisplay = topicsText.length > 150 ? topicsText.substring(0, 150) + '...' : topicsText;
                 settingsHtml = `
-                <div class="detail-section-title">使用設定</div>
+                <div class="detail-section-title">${I18N.t('detail_settings_title')}</div>
                 <div class="settings-info">
-                    <div class="setting-row"><span class="setting-label">モデル:</span> ${s.modelName || '不明'}</div>
-                    <div class="setting-row"><span class="setting-label">深さ:</span> ${s.depth === 'deep' ? '長く' : '標準'}</div>
-                    <div class="setting-row"><span class="setting-label">音声:</span> ${s.voiceName || '不明'}</div>
-                    <div class="setting-row"><span class="setting-label">速度:</span> ${s.rate || '不明'}</div>
-                    <div class="setting-row"><span class="setting-label">トピック:</span><div class="setting-text">${topicsDisplay}</div></div>
-                    ${s.context ? `<div class="setting-row"><span class="setting-label">事前知識:</span><div class="setting-text">${s.context.substring(0, 200)}${s.context.length > 200 ? '...' : ''}</div></div>` : ''}
-                    <div class="setting-row"><span class="setting-label">性格:</span> ${s.personaType ? (PERSONA_LABELS[s.personaType] || s.personaType) : '不明'}</div>
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_model')}</span> ${s.modelName || I18N.t('detail_unknown')}</div>
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_depth')}</span> ${s.depth === 'deep' ? I18N.t('depth_deep') : I18N.t('depth_standard')}</div>
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_voice')}</span> ${s.voiceName || I18N.t('detail_unknown')}</div>
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_rate')}</span> ${s.rate || I18N.t('detail_unknown')}</div>
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_topics')}</span><div class="setting-text">${topicsDisplay}</div></div>
+                    ${s.context ? `<div class="setting-row"><span class="setting-label">${I18N.t('detail_context')}</span><div class="setting-text">${s.context.substring(0, 200)}${s.context.length > 200 ? '...' : ''}</div></div>` : ''}
+                    <div class="setting-row"><span class="setting-label">${I18N.t('detail_persona')}</span> ${s.personaType ? (getPersonaLabel(s.personaType) || s.personaType) : I18N.t('detail_unknown')}</div>
                 </div>
-                <button onclick="applySettings()" class="btn-apply-settings">🔄 この設定をセット</button>
+                <button onclick="applySettings()" class="btn-apply-settings">${I18N.t('btn_apply_settings')}</button>
             `;
             }
 
             detailEl.innerHTML = `
             <div class="detail-header">
                 <div class="detail-title">${rec.title}</div>
-                <div class="detail-meta">日時: ${rec.date}</div>
-                <button onclick="deleteRecord(${rec.id})" class="btn-delete">🗑 この履歴を削除</button>
+                <div class="detail-meta">${rec.date}</div>
+                <button onclick="deleteRecord(${rec.id})" class="btn-delete">${I18N.t('btn_delete')}</button>
             </div>
             ${settingsHtml}
-            <div class="detail-section-title">サマリー</div>
+            <div class="detail-section-title">${I18N.t('detail_summary')}</div>
             <div class="detail-summary">${rec.summary}</div>
-            <button onclick="navigator.clipboard.writeText(\`${rec.summary.replace(/`/g, '\\`')}\`)" style="margin-top:5px; padding:5px; font-size:0.8em; cursor:pointer;">📋 コピー</button>
-            <div class="detail-section-title">会話ログ (${rec.history.length}ターン)</div>
+            <button onclick="navigator.clipboard.writeText(\`${rec.summary.replace(/`/g, '\\`')}\`)" style="margin-top:5px; padding:5px; font-size:0.8em; cursor:pointer;">${I18N.t('btn_copy')}</button>
+            <div class="detail-section-title">${I18N.t('detail_chat_log')} (${rec.history.length} ${I18N.t('detail_turns')})</div>
             <div class="detail-chat">${chatHtml}</div>
         `;
         }
 
         async function deleteRecord(id) {
-            if (!confirm('この履歴を削除しますか？\n削除すると元に戻せません。')) {
+            if (!confirm(I18N.t('confirm_delete'))) {
                 return;
             }
             try {
@@ -1602,24 +1628,24 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                     // 詳細をプレースホルダーに戻す
                     const detailEl = document.getElementById('history-detail');
                     const headerBar = document.getElementById('detail-header-bar');
-                    headerBar.innerText = '📄 詳細';
+                    headerBar.innerText = I18N.t('detail_header');
                     detailEl.innerHTML = `
                         <div class="detail-placeholder">
                             <div class="detail-placeholder-icon">👈</div>
-                            <div>履歴を選択してください</div>
+                            <div>${I18N.t('detail_select')}</div>
                         </div>`;
                     loadHistory();
-                    alert('削除しました');
+                    alert(I18N.t('alert_deleted'));
                 };
             } catch (e) {
                 console.error("Delete Error:", e);
-                alert('削除に失敗しました');
+                alert(I18N.t('alert_delete_failed'));
             }
         }
 
         function applySettings() {
             if (!selectedRecord || !selectedRecord.settings) {
-                alert('この履歴には設定情報が保存されていません');
+                alert(I18N.t('alert_no_settings'));
                 return;
             }
             const s = selectedRecord.settings;
@@ -1669,7 +1695,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
             validateCharCount();
             validateTitle();
 
-            alert('設定をセットしました！');
+            alert(I18N.t('alert_settings_applied'));
         }
 
         loadHistory();
@@ -1677,7 +1703,7 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
         // プロンプト表示モーダル関連
         function showPromptDetail(logIndex) {
             if (!selectedRecord || !selectedRecord.promptLog || !selectedRecord.promptLog[logIndex]) {
-                alert('プロンプト情報が見つかりません');
+                alert(I18N.t('prompt_not_found'));
                 return;
             }
 
@@ -1733,6 +1759,37 @@ Close: End with a final summary in this format: (1)要点3つ, (2)前提/制約,
                 closePromptModal();
             }
         });
+
+        // === I18N initialization ===
+        function renderLangSelector() {
+            const container = document.getElementById('lang-selector');
+            if (!container) return;
+            container.innerHTML = I18N.available().map(lang =>
+                `<button class="lang-btn ${lang.code === I18N.currentLang ? 'active' : ''}" data-lang="${lang.code}" onclick="I18N.setLanguage('${lang.code}')">${lang.flag} ${lang.name}</button>`
+            ).join('');
+        }
+
+        // Language change handler
+        window.addEventListener('languageChanged', (e) => {
+            document.title = I18N.t('setup_page_title');
+            renderLangSelector();
+            populateVoiceList();
+            loadHistory();
+            updateStartButton();
+            // Update STT help text
+            const sttMode = document.querySelector('input[name="sttMode"]:checked').value;
+            const help = document.getElementById('stt-help');
+            if (sttMode === 'groq') {
+                help.innerHTML = I18N.t('stt_help_groq');
+            } else {
+                help.innerHTML = I18N.t('stt_help_webspeech');
+            }
+        });
+
+        // Initialize I18N
+        I18N.init();
+        renderLangSelector();
+        document.title = I18N.t('setup_page_title');
     </script>
 
 </body>

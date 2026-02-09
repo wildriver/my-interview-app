@@ -207,9 +207,9 @@
 <div id="timer">00:00</div>
 
 <div class="container">
-    <h2 id="page-title">インタビュー</h2>
-    <div class="subtitle" id="page-topics">読み込み中...</div>
-    <div id="status" class="status-box status-idle">待機中</div>
+    <h2 id="page-title" data-i18n="interview_title">インタビュー</h2>
+    <div class="subtitle" id="page-topics" data-i18n="interview_loading">読み込み中...</div>
+    <div id="status" class="status-box status-idle" data-i18n="status_idle">待機中</div>
     
     <div id="visualizer-container" class="inactive-visualizer">
         <canvas id="visualizer" width="600" height="100"></canvas>
@@ -218,42 +218,42 @@
     <div class="content-wrapper">
         <div class="chat-section"><div id="chat-log"></div></div>
         <div class="summary-section" id="summary-section">
-            <div class="summary-title">📝 インタビュー結果サマリー</div>
-            <div id="summary-box">ここに結果が表示されます...</div>
-            <button id="copy-btn" class="copy-btn" onclick="copySummary()" disabled>📋 サマリーをコピー</button>
+            <div class="summary-title" data-i18n="summary_title">📝 インタビュー結果サマリー</div>
+            <div id="summary-box" data-i18n="summary_placeholder">ここに結果が表示されます...</div>
+            <button id="copy-btn" class="copy-btn" onclick="copySummary()" disabled data-i18n="btn_copy_summary">📋 サマリーをコピー</button>
         </div>
     </div>
 
     <div class="controls">
         <div id="ctrl-idle">
-            <button class="btn btn-start" onclick="startInterview()">インタビュー開始</button>
+            <button class="btn btn-start" onclick="startInterview()" data-i18n="btn_start_interview">インタビュー開始</button>
         </div>
 
         <div id="interview-actions-wrapper" class="interview-actions" style="display:none;">
             <div id="skip-btn-container">
-                <button id="skip-btn" onclick="skipSpeech()">⏩ 読み上げSkip</button>
+                <button id="skip-btn" onclick="skipSpeech()" data-i18n="btn_skip">⏩ 読み上げSkip</button>
             </div>
 
             <div id="text-input-container" style="display:none;">
                 <div class="text-input-row">
-                    <input type="text" id="text-input" placeholder="テキストで入力..." onkeydown="if(event.key==='Enter')sendTextInput()">
-                    <button onclick="sendTextInput()">送信</button>
+                    <input type="text" id="text-input" placeholder="テキストで入力..." data-i18n-ph="ph_text_input" onkeydown="if(event.key==='Enter')sendTextInput()">
+                    <button onclick="sendTextInput()" data-i18n="btn_send">送信</button>
                 </div>
             </div>
 
             <div id="ctrl-actions" style="display:none; text-align:center;">
-                <button id="reply-btn" onclick="forceReply()">💬 返信して</button>
-                <button id="next-topic-btn" onclick="requestNextTopic()">⏭ 次の話題へ</button>
+                <button id="reply-btn" onclick="forceReply()" data-i18n="btn_reply">💬 返信して</button>
+                <button id="next-topic-btn" onclick="requestNextTopic()" data-i18n="btn_next_topic">⏭ 次の話題へ</button>
             </div>
         </div>
 
         <div id="ctrl-running" class="running-controls" style="display:none;">
-            <button class="btn btn-abort" onclick="abortInterview()">中止する</button>
-            <button class="btn btn-finish" onclick="forceFinish()">終了する</button>
+            <button class="btn btn-abort" onclick="abortInterview()" data-i18n="btn_abort">中止する</button>
+            <button class="btn btn-finish" onclick="forceFinish()" data-i18n="btn_finish">終了する</button>
         </div>
 
         <div id="ctrl-finished" style="display:none;">
-            <button id="back-btn" class="btn btn-back" onclick="window.location.href='index.html'" disabled>設定画面に戻る</button>
+            <button id="back-btn" class="btn btn-back" onclick="window.location.href='index.html'" disabled data-i18n="btn_back">設定画面に戻る</button>
         </div>
     </div>
 
@@ -261,15 +261,19 @@
     <div class="debug-toggle-container">
         <label class="debug-toggle">
             <input type="checkbox" id="debug-mode-toggle" onchange="toggleDebugMode()">
-            <span>🐛 Debug Mode</span>
+            <span data-i18n="debug_label">🐛 Debug Mode</span>
         </label>
     </div>
     <div id="debug-box" class="debug-box">
-        <div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>
+        <div style="color: #888; margin-bottom: 10px;" data-i18n="debug_placeholder">APIコールのプロンプト情報がここに表示されます</div>
     </div>
-    <div class="build-version">Build: 2026-02-09 09:30</div>
+    <div class="build-version">Build: 2026-02-09 22:00</div>
 </div>
 
+<script src="i18n.js"></script>
+<script src="lang/ja.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/de.js"></script>
 <script>
     const DB_NAME = "InterviewDB";
     const DB_VERSION = 1;
@@ -299,14 +303,22 @@
         if (storedConfig) {
             CONFIG = JSON.parse(storedConfig);
         } else {
-            alert("設定画面から起動してください。");
+            alert(I18N.t('alert_no_config'));
             window.location.href = 'index.html';
             return;
         }
 
+        // Initialize I18N with saved language
+        if (CONFIG.language && I18N.langs[CONFIG.language]) {
+            I18N.currentLang = CONFIG.language;
+            document.documentElement.lang = CONFIG.language;
+        }
+        I18N.init();
+        I18N.applyToDOM();
+
         document.getElementById('page-title').innerText = CONFIG.title;
         const sttLabel = (CONFIG.sttMode === 'webspeech') ? 'Web Speech API' : 'Groq Whisper';
-        document.getElementById('page-topics').innerText = "聞きたいこと: " + CONFIG.topics.length + "項目 | 音声認識: " + sttLabel;
+        document.getElementById('page-topics').innerText = I18N.t('topics_info').replace('{count}', CONFIG.topics.length).replace('{stt}', sttLabel);
 
         setupVisualizerCanvas();
         setButtonState("IDLE");
@@ -334,7 +346,7 @@
     }
 
     function abortInterview() {
-        if (confirm("インタビューを中止しますか？\n（内容は保存されません）")) {
+        if (confirm(I18N.t('confirm_abort'))) {
             interviewRunning = false;
             stopRecognition();
             clearInterval(timerInterval);
@@ -343,11 +355,11 @@
     }
 
     function forceFinish() {
-        if (confirm("現在までの内容でインタビューを終了し、サマリーを作成しますか？")) {
+        if (confirm(I18N.t('confirm_finish'))) {
             interviewRunning = false;
             stopTimer();
             stopRecognition();
-            updateStatus('finishing', '終了処理中... サマリーを作成します');
+            updateStatus('finishing', I18N.t('status_finishing'));
             document.getElementById('ctrl-running').style.display = 'none';
             document.getElementById('interview-actions-wrapper').style.display = 'none';
             generateSummary();
@@ -385,7 +397,7 @@
     }
 
     async function startInterview() {
-        if (!CONFIG.apiKey) return alert("APIキーが設定されていません");
+        if (!CONFIG.apiKey) return alert(I18N.t('alert_no_api_key'));
 
         conversationHistory = [];
         currentTopicIndex = 0;
@@ -396,14 +408,14 @@
         document.getElementById('chat-log').innerHTML = '';
         document.getElementById('summary-section').style.display = 'none';
         document.getElementById('summary-box').innerText = '...';
-        document.getElementById('debug-box').innerHTML = '<div style="color: #888; margin-bottom: 10px;">APIコールのプロンプト情報がここに表示されます</div>';
+        document.getElementById('debug-box').innerHTML = `<div style="color: #888; margin-bottom: 10px;">${I18N.t('debug_placeholder')}</div>`;
 
         await initAudioContext();
         setButtonState("RUNNING");
         interviewRunning = true;
         startTimer();
 
-        const intro = "こんにちは。インタビューを始めます。まずは自己紹介をお願いします。";
+        const intro = I18N.t('interview_intro');
         addMessage('ai', intro);
         conversationHistory.push({ role: "assistant", content: intro });
         speak(intro);
@@ -421,14 +433,15 @@
     async function processUserResponse(userText) {
         console.log('[DEBUG] processUserResponse called with:', userText.substring(0, 50));
         isThinking = true;
-        updateStatus('thinking', 'AIが考えています (Groq)...');
+        updateStatus('thinking', I18N.t('status_thinking'));
 
         conversationHistory.push({ role: "user", content: userText });
 
         // 終了希望チェック
         let forceEnd = false;
-        if (userText.includes("やめて") || userText.includes("終了して") || userText.includes("ストップ")) {
-            forceEnd = true;
+        const endKeywords = I18N.t('end_keywords');
+        if (Array.isArray(endKeywords)) {
+            forceEnd = endKeywords.some(kw => userText.includes(kw));
         }
 
         try {
@@ -446,13 +459,13 @@
             addMessage('ai', aiText);
             conversationHistory.push({ role: "assistant", content: aiText });
 
-            if (aiText.includes("終了します") || aiText.includes("終わります")) {
+            if (aiText.includes(I18N.t('end_detected_speak')) || aiText.includes(I18N.t('end_detected_end'))) {
                 interviewRunning = false;
                 stopTimer();
-                updateStatus('finishing', '挨拶の読み上げ中...');
+                updateStatus('finishing', I18N.t('status_farewell'));
 
                 speak(aiText, () => {
-                    updateStatus('finishing', 'サマリー作成中...');
+                    updateStatus('finishing', I18N.t('status_summary_creating'));
                     stopRecognition();
                     generateSummary();
                 });
@@ -463,8 +476,8 @@
         } catch (error) {
             console.error(error);
             addMessage('ai', `<span class="error-msg">${error.message}</span>`);
-            speak("エラーが発生しました。");
-            updateStatus('error', 'エラー');
+            speak(I18N.t('error_occurred'));
+            updateStatus('error', I18N.t('status_error_short'));
             isThinking = false;
         }
     }
@@ -474,8 +487,8 @@
 
         // トピック一覧と現在位置
         const topicsList = CONFIG.topics.map((t, i) => {
-            if (i < currentTopicIndex) return `  ✓ ${t} (完了)`;
-            if (i === currentTopicIndex) return `  ▶ ${t} (現在)`;
+            if (i < currentTopicIndex) return `  ✓ ${t} (${I18N.t('prompt_topic_done')})`;
+            if (i === currentTopicIndex) return `  ▶ ${t} (${I18N.t('prompt_topic_current')})`;
             return `  ○ ${t}`;
         }).join('\n');
 
@@ -487,25 +500,18 @@
         // 状況に応じた指示
         let situationInstruction = "";
         if (forceEnd) {
-            situationInstruction = `
-## 現在の状況: ユーザーが終了を希望
-ユーザーが終了を希望しています。感謝を伝え、「それではインタビューを終了します」と言って締めくくってください。`;
+            situationInstruction = '\n' + I18N.t('prompt_situation_force_end');
         } else if (allDone) {
-            situationInstruction = `
-## 現在の状況: 全トピック完了
-全てのトピックが終わりました。「最後に何か言い残したことはありますか？」と聞いてください。
-相手が特にないと言ったら、感謝を伝え「それではインタビューを終了します」と締めくくってください。`;
+            situationInstruction = '\n' + I18N.t('prompt_situation_all_done');
         } else {
             const depthHint = CONFIG.depth === "deep"
-                ? "（じっくり探求モード：各トピック4〜6回程度のやり取りを目安に、しっかり深掘りしてください）"
-                : "（標準モード：各トピック2〜4回程度のやり取りを目安に、テンポよく進めてください）";
+                ? I18N.t('prompt_depth_deep')
+                : I18N.t('prompt_depth_standard');
             situationInstruction = `
-## 現在の状況
-- 現在のトピック: 「${currentTopic}」
-- 残りトピック数: ${remainingCount}個${isLastTopic ? '（これが最後のトピック）' : ''}
-- インタビュースタイル: ${depthHint}
+## ${I18N.t('prompt_current_topic')}: 「${currentTopic}」
+- ${I18N.t('prompt_remaining')}: ${remainingCount}${isLastTopic ? ' ' + I18N.t('prompt_last_topic_note') : ''}
+- Style: ${depthHint}
 
-## トピック一覧
 ${topicsList}`;
         }
 
@@ -515,47 +521,7 @@ ${CONFIG.persona}
 ${contextText}
 ${situationInstruction}
 
-# インタビュー進行ルール
-
-## 対話の質に応じた対応（重要！）
-
-### 回答が短い・あっさりしている場合
-以下のいずれかで**もう少し引き出して**ください：
-- 「もう少し詳しく聞かせてもらえますか？」
-- 「それって具体的にはどういうことですか？」
-- 「例えばどんな場面でそう感じましたか？」
-- 「〜という理解で合ってますか？」と別の言葉で確認
-- 比喩や例え話で「つまり〜みたいな感じですか？」
-
-### 回答が曖昧・抽象的な場合
-- 「一番印象に残っているエピソードを教えてください」
-- 「時系列で言うと、最初に何が起きましたか？」
-- 「数字で言うとどのくらいですか？」
-
-### 回答が充実している・盛り上がっている場合
-どんどん深掘りしてください：
-- 感情を掘る：「その時どんな気持ちでしたか？」
-- 理由を掘る：「なぜそう思ったんですか？」
-- 影響を掘る：「それが今にどう繋がっていますか？」
-- 意外な角度：「逆に〜だったらどうでしたか？」
-
-### 次のトピックに移るタイミング
-以下の場合に次へ進んでください：
-- 同じ話が繰り返されている
-- 相手が「特にないです」「そのくらいですかね」と言った
-- 十分な深さ（理由、エピソード、感情）が聞けた
-- 3回以上深掘りしても新しい情報が出ない
-
-## トピック移行の方法
-次のトピックに移る時は、回答の**末尾**に必ず \`[[NEXT]]\` を付けてください。
-例: 「なるほど、よく分かりました。では次に、〜についてお聞きしたいのですが...？[[NEXT]]」
-
-## 基本ルール
-1. **オウム返し禁止** - 「〜ということですね」「〜なんですね」は使わない
-2. **相槌から始める** - 「なるほど、」「へぇ〜、」「あぁ、」など（毎回違うものを）
-3. **すぐ質問** - 長い前置きなしで質問へ
-4. **必ず質問で終わる** - 発言の最後は質問形
-5. **終了禁止** - 終了する時以外は「終了します」と言わない
+${I18N.t('prompt_rules')}
 `;
     }
 
@@ -605,7 +571,7 @@ ${situationInstruction}
                 const err = await response.json().catch(() => ({}));
                 // Rate Limitエラーの場合は、ユーザーに分かりやすく表示
                 if (response.status === 429) {
-                    throw new Error("Rate Limit Exceeded: 1日の利用制限に達しました。時間をおいて試してください。");
+                    throw new Error(I18N.t('error_rate_limit'));
                 }
                 throw new Error(`Groq API Error: ${err.error?.message || response.statusText}`);
             }
@@ -627,7 +593,7 @@ ${situationInstruction}
         } catch (err) {
             clearTimeout(timeoutId);
             if (err.name === 'AbortError') {
-                throw new Error('API呼び出しがタイムアウトしました（30秒）。再度お試しください。');
+                throw new Error(I18N.t('error_timeout'));
             }
             throw err;
         }
@@ -637,17 +603,15 @@ ${situationInstruction}
         const summarySection = document.getElementById('summary-section');
         summarySection.style.display = 'block';
         const summaryBox = document.getElementById('summary-box');
-        summaryBox.innerText = "長文サマリー生成中...";
+        summaryBox.innerText = I18N.t('status_summary_generating');
 
         const historyText = conversationHistory.map(item => `${item.role}: ${item.content}`).join("\n");
-        const prompt = `以下のログを元に、詳細なドキュメンタリー記事を作成してください。\n\n【ログ】\n${historyText}`;
-        
+        const prompt = I18N.t('prompt_summary_instruction').replace('{history}', historyText);
+
         try {
-            // サマリー生成時は履歴を送らず、テキスト化して送る（これは変えない）
-            // Summary時はトークン消費が多いが1回だけなので許容する。
-            const summaryText = await callGroqAPI([{ role: "user", content: prompt }], "あなたは優秀なライターです。", 0.7, 4096, 'summary');
+            const summaryText = await callGroqAPI([{ role: "user", content: prompt }], I18N.t('prompt_summary_system'), 0.7, 4096, 'summary');
             summaryBox.innerText = summaryText;
-            updateStatus('idle', '完了');
+            updateStatus('idle', I18N.t('status_complete'));
             setButtonState("FINISHED");
             // サマリー完了後にボタンを有効化
             document.getElementById('copy-btn').disabled = false;
@@ -706,16 +670,24 @@ ${situationInstruction}
 
     function copySummary() {
         const text = document.getElementById('summary-box').innerText;
-        navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
+        navigator.clipboard.writeText(text).then(() => alert(I18N.t('alert_copied')));
     }
 
     function cleanTextForSpeech(text) { return text.replace(/[\*#_`~]/g, ''); }
 
     function configureUtterance(utterance) {
-        utterance.rate = CONFIG.rate; utterance.volume = 1.0; utterance.pitch = 1.0; 
+        utterance.rate = CONFIG.rate; utterance.volume = 1.0; utterance.pitch = 1.0;
+        utterance.lang = I18N.speechLang;
         if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
         const selectedVoice = availableVoices.find(v => v.name === CONFIG.voiceName);
-        if (selectedVoice) utterance.voice = selectedVoice;
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        } else {
+            // Fallback: find any voice matching current language
+            const langCode = I18N.speechLang.split('-')[0];
+            const fallbackVoice = availableVoices.find(v => v.lang.includes(langCode));
+            if (fallbackVoice) utterance.voice = fallbackVoice;
+        }
     }
     
     // --- STT Engine (Groq Whisper / Web Speech API) ---
@@ -837,7 +809,7 @@ ${situationInstruction}
         silenceStartTime = 0;
         recordingStartTime = Date.now();
 
-        updateStatus('listening', '聞いています...');
+        updateStatus('listening', I18N.t('status_listening'));
         toggleVisualizer(true);
         console.log('[STT] startListeningGroq');
 
@@ -857,12 +829,11 @@ ${situationInstruction}
             if (audioChunks.length === 0 || !speechDetected) {
                 if (wasForceReply) {
                     consecutiveSilenceCount = 0;
-                    addMessage('user', '(続けてください)');
-                    processUserResponse('続けてください');
+                    addMessage('user', I18N.t('text_continue'));
+                    processUserResponse(I18N.t('text_continue_request'));
                     return;
                 }
                 consecutiveSilenceCount++;
-                console.log('[STT] No speech detected, silence count:', consecutiveSilenceCount);
                 if (consecutiveSilenceCount >= MAX_SILENCE_ROUNDS) {
                     handleSilenceTimeout();
                     return;
@@ -873,7 +844,7 @@ ${situationInstruction}
                 return;
             }
             const blob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-            updateStatus('thinking', '音声を認識中 (Groq Whisper)...');
+            updateStatus('thinking', I18N.t('status_recognizing'));
             toggleVisualizer(false);
             try {
                 const text = await transcribeGroq(blob);
@@ -895,14 +866,14 @@ ${situationInstruction}
                     addMessage('user', text.trim());
                     processUserResponse(text.trim());
                 } else if (wasForceReply) {
-                    addMessage('user', '(続けてください)');
-                    processUserResponse('続けてください');
+                    addMessage('user', I18N.t('text_continue'));
+                    processUserResponse(I18N.t('text_continue_request'));
                 } else {
                     startListening();
                 }
             } catch (e) {
                 console.error('[STT] Transcription error:', e);
-                updateStatus('error', '音声認識エラー: ' + e.message);
+                updateStatus('error', I18N.t('error_stt') + e.message);
                 setTimeout(() => startListening(), 1000);
             }
         };
@@ -938,19 +909,19 @@ ${situationInstruction}
         if (isListening) return;
         isListening = true;
 
-        updateStatus('listening', '聞いています...');
+        updateStatus('listening', I18N.t('status_listening'));
         toggleVisualizer(true);
         console.log('[STT] startListeningWebSpeech');
 
         if (!recognition) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                updateStatus('error', 'Web Speech APIがこのブラウザでサポートされていません');
+                updateStatus('error', I18N.t('error_stt_unsupported'));
                 isListening = false;
                 return;
             }
             recognition = new SpeechRecognition();
-            recognition.lang = 'ja-JP';
+            recognition.lang = I18N.speechLang;
             recognition.continuous = false;
             recognition.interimResults = false;
         }
@@ -997,13 +968,13 @@ ${situationInstruction}
             }
 
             if (event.error === 'network') {
-                updateStatus('error', 'ネットワークエラー。設定画面でGroq Whisperへの切り替えを推奨します。');
+                updateStatus('error', I18N.t('error_stt_network'));
                 return;
             }
 
             if (event.error === 'aborted' || event.error === 'not-allowed') return;
 
-            updateStatus('error', '音声認識エラー: ' + event.error);
+            updateStatus('error', I18N.t('error_stt') + event.error);
             if (interviewRunning) setTimeout(() => startListening(), 1000);
         };
 
@@ -1093,7 +1064,7 @@ ${situationInstruction}
         const formData = new FormData();
         formData.append('file', audioBlob, `audio.${ext}`);
         formData.append('model', 'whisper-large-v3-turbo');
-        formData.append('language', 'ja');
+        formData.append('language', I18N.whisperLang);
         formData.append('response_format', 'json');
 
         const controller = new AbortController();
@@ -1118,7 +1089,7 @@ ${situationInstruction}
             return data.text;
         } catch (err) {
             clearTimeout(timeoutId);
-            if (err.name === 'AbortError') throw new Error('音声認識がタイムアウトしました');
+            if (err.name === 'AbortError') throw new Error(I18N.t('error_stt_timeout'));
             throw err;
         }
     }
@@ -1127,15 +1098,15 @@ ${situationInstruction}
         if (!interviewRunning) return;
         console.log('[STT] Silence timeout - asking user');
         consecutiveSilenceCount = 0;
-        updateStatus('idle', '無音が続いています');
+        updateStatus('idle', I18N.t('status_silence'));
         toggleVisualizer(false);
-        const msg = 'しばらく音声が検出されませんでした。インタビューを終了しますか？';
+        const msg = I18N.t('silence_message');
         addMessage('ai', msg);
         speak(msg, () => {
             // 発話後、ユーザーの応答を待つ（startListeningは speak() の onend で呼ばれる）
             // → speak の onComplete を指定しているので、自動的には startListening しない
             // ユーザーが「返信して」やテキスト入力で応答するのを待つ
-            updateStatus('listening', '聞いています...');
+            updateStatus('listening', I18N.t('status_listening'));
             toggleVisualizer(true);
             // 短い待機後にリスニング開始
             setTimeout(() => startListening(), 500);
@@ -1162,8 +1133,8 @@ ${situationInstruction}
             if (sttMode === 'webspeech') {
                 // Web Speech API: 停止して直接AIに依頼
                 stopListening();
-                addMessage('user', '(続けてください)');
-                processUserResponse('続けてください');
+                addMessage('user', I18N.t('text_continue'));
+                processUserResponse(I18N.t('text_continue_request'));
                 return;
             }
             // Groq mode: forceReplyModeフラグでonstopハンドラに制御を委譲
@@ -1173,8 +1144,8 @@ ${situationInstruction}
         }
 
         // 聴講中でなければ直接AIに続行を依頼
-        addMessage('user', '(続けてください)');
-        processUserResponse('続けてください');
+        addMessage('user', I18N.t('text_continue'));
+        processUserResponse(I18N.t('text_continue_request'));
     }
 
     function sendTextInput() {
@@ -1208,14 +1179,14 @@ ${situationInstruction}
         }
         stopSpeechInterruptionDetection();
         stopListening();
-        addMessage('user', '(次の話題へ)');
-        processUserResponse('次の話題に移ってください');
+        addMessage('user', I18N.t('text_next_topic'));
+        processUserResponse(I18N.t('text_next_topic_request'));
     }
 
     function speak(text, onComplete = null) {
         const cleanText = cleanTextForSpeech(text);
         isInterviewerSpeaking = true;
-        updateStatus('speaking', 'AIが話しています...');
+        updateStatus('speaking', I18N.t('status_speaking'));
         console.log('[DEBUG] speak() called, text length:', cleanText.length);
 
         const skipBtn = document.getElementById('skip-btn');
