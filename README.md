@@ -158,3 +158,6 @@ python -m http.server 8000
 ## ライセンス
 
 Apache License 2.0
+
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rkwytk)
